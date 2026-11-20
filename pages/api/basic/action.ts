@@ -71,8 +71,8 @@ export async function test(req: ExtendedRequest, res: NextApiResponse) {
   try {
     // const result = await init_registry();
 
-    const response = await clear_cart();
-    // const response = create_spatie();
+    // const response = await clear_cart();
+    const response = create_spatie();
     // const response = create_pages();
     // const response = migrate()
     // const response = db_correct()
