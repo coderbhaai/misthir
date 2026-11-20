@@ -1,7 +1,7 @@
 import cookie from 'cookie';
 import { NextApiRequest, NextApiResponse } from 'next';
 import Cart from 'lib/models/ecom/Cart';
-import { getUserIdFromToken } from './basic/auth';
+import { getUserIdFromToken } from 'lib/services/authService';
 
 export async function getCartIdFromRequest(req: NextApiRequest, res: NextApiResponse): Promise<string | null> {
   const user_id = await getUserIdFromToken(req);

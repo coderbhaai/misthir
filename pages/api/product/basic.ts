@@ -15,7 +15,7 @@ import BankDetail from 'lib/models/product/BankDetail';
 import Documentation from 'lib/models/product/Documentation';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { APIHandlers } from 'lib/server/middleware';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 
 // Productmeta

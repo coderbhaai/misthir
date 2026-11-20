@@ -3,7 +3,6 @@
 import { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
-import { logError, ROUTE_EXCEPTION_MAP } from '../utils';
 import { APIHandlers } from 'lib/server/middleware';
 import UrlRegistry from 'lib/models/basic/UrlRegistry';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
@@ -18,6 +17,9 @@ import { get_single_blog_by_url } from '../blog/blogs';
 import { get_single_product_by_url } from '../product/product';
 import { get_page_by_url } from './page';
 import ErrorLog from 'lib/models/basic/ErrorLog';
+import { logError } from 'lib/services/errorService';
+import { getSitemapData } from './meta';
+import Client from 'lib/models/basic/Client';
 
 // Modules
   interface ModuleData {
@@ -281,6 +283,45 @@ import ErrorLog from 'lib/models/basic/ErrorLog';
     } catch (error) { await logError(error, { function: "update_url_registry", payload: req.body }); }
   }
 // Routing
+
+// Exceptions
+type RouteExceptionContext = {
+  req: NextApiRequest;
+  registryEntry: any;
+  englishRegistryEntry: any;
+  englishLangDoc: any;
+  targetLangDoc: any;
+  lang: string;
+  moduleType: string;
+  cleanMasterSlug: string;
+};
+
+type RouteExceptionHandler = (
+  context: RouteExceptionContext
+) => Promise<any>;
+
+export const ROUTE_EXCEPTION_MAP: Record<string, RouteExceptionHandler> = {
+  sitemap: getSitemapRouteData,
+  "our clients": getClientData,
+};
+
+export async function getSitemapRouteData({registryEntry, englishRegistryEntry}: {
+  req: NextApiRequest;
+  registryEntry: any;
+  englishRegistryEntry: any;
+  lang: string;
+}) {
+  const sitemapData = await getSitemapData();
+
+  return { data: sitemapData };
+}
+
+export async function getClientData() {
+  const clients = await Client.find({ status: true }).populate("media_id").lean();
+
+  return { data: clients };
+}
+// Exceptions
 
 export const functions: APIHandlers = {
   get_all_modules : { middlewares: [ "checkUserId", ] },

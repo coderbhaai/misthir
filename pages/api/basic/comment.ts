@@ -1,10 +1,10 @@
 import { Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import CommentModel from 'lib/models/basic/Comment';
 import { createApiHandler } from '../apiHandler';
 import { APIHandlers } from 'lib/server/middleware';
-import { getUserIdFromToken } from './auth';
+import { getUserIdFromToken } from 'lib/services/authService';
 
 export async function create_update_comment(req: NextApiRequest, res: NextApiResponse) {
   try {

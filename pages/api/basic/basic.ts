@@ -7,13 +7,13 @@ import Client from 'lib/models/basic/Client';
 import Contact from 'lib/models/basic/Contact';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import SiteSetting from 'lib/models/payment/SiteSetting';
-import { logError } from '../utils';
 import { APIHandlers } from 'lib/server/middleware';
 import UrlRegistry from 'lib/models/basic/UrlRegistry';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Blog from 'lib/models/blog/Blog';
 import Page from 'lib/models/basic/Page';
 import Product from 'lib/models/product/Product';
+import { logError } from 'lib/services/errorService';
 
 // Client
   export async function get_all_clients(req: NextApiRequest, res: NextApiResponse) {

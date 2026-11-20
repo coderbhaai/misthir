@@ -1,6 +1,5 @@
 import { Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { checkNullValue, logError } from '../utils';
 import UserPermission from 'lib/models/spatie/UserPermission';
 import { uploadMedia } from './media';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
@@ -9,7 +8,9 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Menu from 'lib/models/spatie/Menu';
 import Page from 'lib/models/basic/Page';
 import UrlRegistry from 'lib/models/basic/UrlRegistry';
-import { getUserIdFromToken } from 'pages/api/basic/auth';
+import { getUserIdFromToken } from 'lib/services/authService';
+import { logError } from 'lib/services/errorService';
+import { checkNullValue } from 'lib/services/dataService';
 
 interface IMenu {
   _id: Types.ObjectId | string;

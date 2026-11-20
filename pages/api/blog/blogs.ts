@@ -4,7 +4,6 @@ import Blog from 'lib/models/blog/Blog';
 import { uploadMedia } from '../basic/media';
 import { generateSitemap, slugify, upsertMeta } from '../basic/meta';
 import BlogBlogmeta from 'lib/models/blog/BlogBlogmeta';
-import { cleanContent, getRelatedContent, logError, pivotEntry, safeParse } from '../utils';
 import Blogmeta from 'lib/models/blog/Blogmeta';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
@@ -13,6 +12,8 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import { parseShortcodes } from 'pages/api/basic/shortCode/parseShortcodes';
 import Product from 'lib/models/product/Product';
 import { get_page_entry } from '../basic/page';
+import { logError } from 'lib/services/errorService';
+import { cleanContent, getRelatedContent, pivotEntry, safeParse } from 'lib/services/dataService';
 
 export async function get_filtered_blogs(req: NextApiRequest, res: NextApiResponse) {
   try {

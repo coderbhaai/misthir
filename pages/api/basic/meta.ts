@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import mongoose, { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Meta from 'lib/models/basic/Meta';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import Blog from 'lib/models/blog/Blog';
 import Page from 'lib/models/basic/Page';
 import { createApiHandler } from '../apiHandler';

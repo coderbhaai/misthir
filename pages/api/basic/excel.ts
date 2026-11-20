@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import { createApiHandler } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { Types } from 'mongoose';

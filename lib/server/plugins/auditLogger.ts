@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Query } from "mongoose";
 import AuditLog from "lib/models/basic/AuditLog";
-import { getUserIdFromToken } from "../tokenUtils";
 import { getRequestContext } from "../requestContext";
+import { getUserIdFromToken } from "lib/services/authService";
 
 export function auditLoggerPlugin(schema: Schema) {
   const IGNORED_FIELDS = ["createdAt", "updatedAt", "meta_id", "media_id"];

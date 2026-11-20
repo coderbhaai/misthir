@@ -3,7 +3,7 @@ import { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Author from 'lib/models/blog/Author';
 import { uploadMedia } from '../basic/media';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';

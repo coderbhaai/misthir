@@ -1,6 +1,6 @@
 import mongoose, { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import { createApiHandler, ExtendedRequest, } from '../apiHandler';
 import Coupon from 'lib/models/coupon/Coupon';
 import { uploadMedia } from '../basic/media';

@@ -9,9 +9,9 @@ import { CleanConfig, ExcelCounterDoc, ExistsCheckResult, FieldCheckRule, FinalN
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { deleteAction, initAction } from "pages/api/basic/action";
-import { logError } from "../utils";
 import Action from "lib/models/basic/Action";
 import ExcelUpload from "lib/models/excel/ExcelUpload";
+import { logError } from "lib/services/errorService";
 dayjs.extend(customParseFormat);
 
 export interface LookupResult<T = any> {

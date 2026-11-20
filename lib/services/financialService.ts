@@ -2,7 +2,7 @@ import SellerIncome from "lib/models/seller/SellerIncome";
 import TaxCollected from "lib/models/tax/TaxCollected";
 import TaxCollectedSummary from "lib/models/tax/TaxCollectedSummary";
 import { Types } from "mongoose";
-import { logError } from "pages/api/utils";
+import { logError } from "./errorService";
 
 export interface FinancialItemInput {
   item_id?: Types.ObjectId | string;

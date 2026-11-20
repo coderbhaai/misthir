@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-export interface MetaTempDoc extends Document<Types.ObjectId> {
+export interface MetaTempProps extends Document<Types.ObjectId> {
   excelUpload_id: Types.ObjectId;
   status: string;
   message: string;
@@ -13,7 +13,7 @@ export interface MetaTempDoc extends Document<Types.ObjectId> {
   updatedAt: Date;
 }
 
-const MetaTempSchema = new Schema<MetaTempDoc>({
+const MetaTempSchema = new Schema<MetaTempProps>({
   excelUpload_id: { type: Schema.Types.ObjectId, ref: "ExcelUpload" },
   status: { type: String, default: "New" },
   message: { type: String, default: "" },
@@ -24,4 +24,4 @@ const MetaTempSchema = new Schema<MetaTempDoc>({
   focus_keyword: { type: String, required: false },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
-export default mongoose.models.MetaTemp || mongoose.model<MetaTempDoc>("MetaTemp", MetaTempSchema);
+export default mongoose.models.MetaTemp || mongoose.model<MetaTempProps>("MetaTemp", MetaTempSchema);

@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
-import { logError, pivotEntry } from "../utils";
 import User from "lib/models/spatie/User";
 import RolePermission from "lib/models/spatie/RolePermission";
 import SpatieRole from "lib/models/spatie/SpatieRole";
@@ -9,32 +8,14 @@ import UserRole from "lib/models/spatie/UserRole";
 import { createApiHandler } from "../apiHandler";
 import { APIHandlers } from "../../../lib/server/middleware";
 import { Types } from "mongoose";
-import { IUserWithRelations } from "lib/models/types/User";
 import ResetPassword from "lib/models/spatie/ResetPassword";
 import { UserOtpMail } from "@amitkk/basic/mails/UserOtpMail";
-import { IJwtPayload, IUser, JwtPayload } from "lib/models/types/User";
 import Otp, { IOtp } from "lib/models/spatie/Otp";
 import crypto from 'crypto';
-import jwt from "jsonwebtoken";
 import Menu from "lib/models/spatie/Menu";
-
-interface PopulatedRole {
-  _id: Types.ObjectId;
-  name: string;
-}
-
-interface PopulatedPermission {
-  _id: Types.ObjectId;
-  name: string;
-}
-
-interface UserRolePopulated {
-  role_id: PopulatedRole | null;
-}
-
-interface UserPermissionPopulated {
-  permission_id: PopulatedPermission | null;
-}
+import { generateAuthLoad, getUserIdFromToken } from "lib/services/authService";
+import { pivotEntry } from "lib/services/dataService";
+import { logError } from "lib/services/errorService";
 
 interface IPopulatedPermission {
   _id: Types.ObjectId;
@@ -61,7 +42,7 @@ export async function login_via_email(req: NextApiRequest, res: NextApiResponse)
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) { return res.status(401).json({ message: "Invalid credentials", data: null }); }
 
-    const data = await generateAuthLoad(user._id);
+    const data = await generateAuthLoad(req, user._id);
 
     return res.status(200).json({ message: 'Welcome Aboard', data });
   } catch (error) { await logError(error, { function: "login_via_email", payload: req.body }); }
@@ -106,7 +87,7 @@ export async function register_or_login_via_mobile(req: NextApiRequest, res: Nex
     const existingUser = await User.findOne(existingUserQuery);
 
     if (existingUser) {
-      const user_data = await generateAuthLoad(existingUser._id);
+      const user_data = await generateAuthLoad(req, existingUser._id);
       return res.status(200).json({ message: 'Welcome Aboard', data:user_data });
     }    
 
@@ -117,7 +98,7 @@ export async function register_or_login_via_mobile(req: NextApiRequest, res: Nex
     });
     
     await attachRoleAndPermissions(newUser._id, role);
-    const user_registered_data = await generateAuthLoad(newUser._id);
+    const user_registered_data = await generateAuthLoad(req, newUser._id);
 
     await Otp.deleteOne({ _id: otpEntry._id });
 
@@ -156,7 +137,7 @@ export async function register_via_email(req: NextApiRequest, res: NextApiRespon
     });
 
     await attachRoleAndPermissions(newUser._id, role);
-    const user_data = await generateAuthLoad(newUser._id);
+    const user_data = await generateAuthLoad(req, newUser._id);
 
     await Otp.deleteOne({ _id: otpEntry._id });
 
@@ -188,39 +169,6 @@ export async function get_single_otp(req: NextApiRequest, res: NextApiResponse) 
 
     return res.status(201).json({ message: 'Single Entry Fetched', data });
   } catch (error) { await logError(error, { function: "get_single_otp", payload: req.body }); }  
-}
-
-export async function generateAuthLoad(user_id: string | Types.ObjectId): Promise<string | null> {
-  try{
-
-    const user = await User.findById(user_id)
-    .populate({
-      path: "rolesAttached",
-      populate: { path: "role_id", model: "SpatieRole", select: "_id name" }
-    })
-    .populate({
-      path: "permissionsAttached",
-      populate: { path: "permission_id", model: "SpatiePermission", select: "_id name" }
-    })
-    .lean<IUserWithRelations>().exec();
-  
-    if (!user) return null;
-    
-    const roles =
-      user.rolesAttached?.map((r: { role_id: { _id: { toString: () => any; }; name: any; }; }) => ({
-        _id: r.role_id._id.toString(),
-        name: r.role_id.name,
-      })) || [];
-  
-    const permissions =
-      user.permissionsAttached?.map((p: { permission_id: { _id: { toString: () => any; }; name: any; }; }) => ({
-        _id: p.permission_id._id.toString(),
-        name: p.permission_id.name,
-      })) || [];
-  
-    const token = generateJWTToken(user, roles, permissions);
-    return token;
-  }catch (error) { await logError(error, { function: "generateAuthLoad", payload: {user_id} }); return null; } 
 }
 
 export async function attachRoleAndPermissions(user_id: Types.ObjectId, role?: string): Promise<void> {
@@ -289,20 +237,6 @@ export async function reset_password(req: NextApiRequest, res: NextApiResponse) 
 }
 
 // Functions
-  export async function getUserIdFromToken(req: NextApiRequest): Promise<string | null> {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) { return null; }
-
-      const token = authHeader.split(" ")[1];
-      if (!token) return null;
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-
-      return decoded?._id || null;
-    } catch (error) { await logError(error, { function: "getUserIdFromToken", payload: req.body }); return null; }
-  }
-
   export async function checkPermissionLogic(req: NextApiRequest, url?: string) {
     try {
       const user_id = await getUserIdFromToken(req);
@@ -315,35 +249,20 @@ export async function reset_password(req: NextApiRequest, res: NextApiResponse) 
         return { message: 'Auto-allowed because of /user/', data: true };
       }
 
-      const menu = await Menu.findOne({ url: finalUrl });
+      const menu = await Menu.findOne({ url: finalUrl, status: true });
       if (!menu) return { message: 'Checked Permissions - Menu Missing', data: false };
-
+      
       const hasPermission = await UserPermission.findOne({
         user_id: user_id,
         permission_id: menu.permission_id,
       });
-
+      
       if (!hasPermission) {
         return { message: 'Permission Denied', data: false };
       }
 
       return { message: 'Permission To Enter', data: true };
     } catch (error) { await logError(error, { function: "checkPermissionLogic", payload: req.body }); }
-  }
-
-  export function generateJWTToken(user: IUser, roles: { _id: string; name: string }[], permissions: { _id: string; name: string }[]): string {
-    if (!process.env.JWT_SECRET) { throw new Error("JWT_SECRET is not defined in environment variables"); }
-
-    const payload: IJwtPayload = {
-      _id: user._id.toString(),
-      name: user.name ?? "",
-      email: user.email ?? "",
-      phone: user.phone ?? "",
-      roles,
-      permissions,
-    };
-
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
   }
 
   interface OtpPayload {

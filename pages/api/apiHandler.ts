@@ -4,7 +4,6 @@ import fs from "fs";
 import { IncomingForm, Fields, Files } from "formidable";
 import connectDB from "lib/server/mongodb";
 import {FunctionsMap, runMiddlewares} from "../../lib/server/middleware";
-import { normalizeError } from "./utils";
 
 const tmpDir = path.join(process.cwd(), "tmp");
 if (!fs.existsSync(tmpDir)) { fs.mkdirSync(tmpDir); }
@@ -164,5 +163,20 @@ export function createApiHandler(functions: FunctionsMap, handlers: HandlerMap) 
         return res.status(500).json({ message: "Internal Server Error" });
       }
     }
+  };
+}
+
+export function normalizeError(error: any) {
+  if (error?.code === 11000) {
+    return {
+      type: "DUPLICATE_KEY",
+      field: Object.keys(error.keyPattern || {})[0],
+      message: "Duplicate value found"
+    };
+  }
+
+  return {
+    type: "UNKNOWN",
+    message: error?.message || "Error in normalizeError"
   };
 }

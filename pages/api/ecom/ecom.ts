@@ -1,7 +1,6 @@
 import mongoose, { Types } from 'mongoose';
 import { createApiHandler } from '../apiHandler';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getGenericContent, logError } from '../utils';
 import { getCartIdFromRequest, setCookie } from '../cartUtils';
 import Sku from 'lib/models/product/Sku';
 import Product from 'lib/models/product/Product';
@@ -10,7 +9,6 @@ import { handleApplyCoupon } from './coupon';
 import { applySalesAndGetUpsells, getEffectiveSkuPrice } from './sales';
 import { initAction } from '../basic/action';
 import { APIHandlers } from 'lib/server/middleware';
-import { getUserIdFromToken } from '../basic/auth';
 import Cart, { CartDoc } from 'lib/models/ecom/Cart';
 import CartCharges from 'lib/models/ecom/CartCharges';
 import CartCoupon from 'lib/models/coupon/CartCoupon';
@@ -25,6 +23,9 @@ import CartConsent from 'lib/models/ecom/CartConsent';
 import OrderConsent from 'lib/models/ecom/OrderConsent';
 import OrderOrderConsent from 'lib/models/ecom/OrderOrderConsent';
 import { processModuleFinancials } from 'lib/services/financialService';
+import { getUserIdFromToken } from 'lib/services/authService';
+import { logError } from 'lib/services/errorService';
+import { getGenericContent } from 'lib/services/dataService';
 
 export async function add_to_cart(req: any, res: any) {
   try {

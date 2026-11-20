@@ -1,11 +1,12 @@
 import { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { uploadMedia } from '../basic/media';
-import { cleanContent, logError } from '../utils';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import BlockQuote from 'lib/models/block/BlockQuote';
+import { logError } from 'lib/services/errorService';
+import { cleanContent } from 'lib/services/dataService';
 
 export async function get_filtered_blockquotes(req: NextApiRequest, res: NextApiResponse) {
   try {

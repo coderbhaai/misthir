@@ -1,10 +1,10 @@
 import * as XLSX from "xlsx";
 import { deleteAction, initAction } from "pages/api/basic/action";
-import { logError } from "pages/api/utils";
 import Meta from "lib/models/basic/Meta";
-import MetaTemp, { MetaTempProps } from "lib/models/excel/MetaTemp";
 import ExcelUpload from "lib/models/excel/ExcelUpload";
 import path from "path";
+import MetaTemp, { MetaTempProps } from "lib/models/excel/MetaTemp";
+import { logError } from "lib/services/errorService";
 
 interface ProcessMetaSummary {
   total: number;

@@ -1,12 +1,12 @@
 import { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { syncMediaHub, uploadMedia } from './media';
-import { createApiHandler, ExtendedRequest, HandlerMap, } from '../apiHandler';
+import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import Review from 'lib/models/basic/Review';
 import "lib/models";
 import { APIHandlers } from 'lib/server/middleware';
-import { getUserIdFromToken } from './auth';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
+import { getUserIdFromToken } from 'lib/services/authService';
 
 export async function create_update_review(req: ExtendedRequest, res: NextApiResponse) { 
   try {

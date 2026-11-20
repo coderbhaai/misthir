@@ -4,7 +4,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import TaxCollected from 'lib/models/tax/TaxCollected';
 import Tax from 'lib/models/tax/Tax';
 import { APIHandlers } from 'lib/server/middleware';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import TaxCollectedSummary from 'lib/models/tax/TaxCollectedSummary';
 
 export async function get_filtered_taxes(req: NextApiRequest, res: NextApiResponse) {

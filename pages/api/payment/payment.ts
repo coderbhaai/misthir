@@ -5,7 +5,7 @@ import Cart from 'lib/models/ecom/Cart';
 import RazorpayPayment from 'lib/models/payment/RazorpayPayment';
 import { createOrderFromCart } from '../ecom/ecom';
 import { APIHandlers } from 'lib/server/middleware';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import SiteSetting from 'lib/models/payment/SiteSetting';
 import Razorpay from 'razorpay';
 

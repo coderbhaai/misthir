@@ -1,7 +1,5 @@
 import mongoose, { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { escapeRegExp, getRelatedContent, logError, pivotEntry } from '../utils';
-import { syncMediaHub } from '../basic/media';
 import Productmeta from 'lib/models/product/Productmeta';
 import { generateSitemap, slugify, upsertMeta } from '../basic/meta';
 import ProductBrand from 'lib/models/product/ProductBrand';
@@ -20,9 +18,12 @@ import { getReviews } from '../basic/review';
 import BulkOrder from 'lib/models/ecom/BulkOrder';
 import { initAction } from '../basic/action';
 import { APIHandlers } from 'lib/server/middleware';
-import { getUserIdFromToken } from '../basic/auth';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import SkuDetail from 'lib/models/product/SkuDetail';
+import { getUserIdFromToken } from 'lib/services/authService';
+import { escapeRegExp, getRelatedContent, pivotEntry } from 'lib/services/dataService';
+import { syncMediaHub } from 'lib/services/mediaService';
+import { logError } from 'lib/services/errorService';
 
 export async function get_filtered_products(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -587,7 +588,7 @@ export async function get_sku_options(req: NextApiRequest, res: NextApiResponse)
       const data = req.body;
       if (!data?.name || !data?.email || !data?.phone ) { return res.status(400).json({ message: 'Required fields missing' }); }
 
-      const user_id = await getUserIdFromToken(req);    
+      const user_id = await getUserIdFromToken(req);
       const newEntry = new BulkOrder({
           user_id: user_id,
           product_id: data.product_id,

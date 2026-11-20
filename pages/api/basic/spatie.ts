@@ -1,6 +1,5 @@
 import mongoose, { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getDuplicateKeyErrorMessage,  logError, pivotEntry, safeParse } from '../utils';
 import SpatiePermission from 'lib/models/spatie/SpatiePermission';
 import SpatieRole from 'lib/models/spatie/SpatieRole';
 import RolePermission from 'lib/models/spatie/RolePermission';
@@ -12,8 +11,11 @@ import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import bcrypt from "bcryptjs";
 import { AnyModel } from 'lib/models';
-import { checkPermissionLogic, getUserIdFromToken } from 'pages/api/basic/auth';
+import { checkPermissionLogic } from 'pages/api/basic/auth';
 import { getUsersWithRole } from 'services/userService';
+import { getUserIdFromToken } from 'lib/services/authService';
+import { getDuplicateKeyErrorMessage, logError } from 'lib/services/errorService';
+import { pivotEntry, safeParse } from 'lib/services/dataService';
 
 export interface UserBasicInfo {
   _id: Types.ObjectId;

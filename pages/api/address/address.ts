@@ -1,15 +1,16 @@
 import { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
-import { checkNullValue, logError, normalizeError, safeParse } from '../utils';
 import Country from 'lib/models/address/Country';
 import State from 'lib/models/address/State';
 import City from 'lib/models/address/City';
 import Address from 'lib/models/address/Address';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
-import { getUserIdFromToken } from '../basic/auth';
 import { getUsersIdByEmail } from '../basic/spatie';
+import { getUserIdFromToken } from 'lib/services/authService';
+import { logError } from 'lib/services/errorService';
+import { checkNullValue, safeParse } from 'lib/services/dataService';
 
 // Country
   export async function get_filtered_country(req: NextApiRequest, res: NextApiResponse) {
@@ -436,8 +437,7 @@ import { getUsersIdByEmail } from '../basic/spatie';
           if (!updated) { return res.status(404).json({ message: '❌ Entry not found for update' }); }
           return res.status(200).json({ message: '✅ Entry updated successfully', data: updated });
         } catch (error) { 
-          await logError(error, { function: "create_update_address", payload: req.body }); 
-          return res.status(500).json({ message: normalizeError(error) });
+          await logError(error, { function: "create_update_address", payload: req.body });
         }
       }
 

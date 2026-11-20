@@ -5,15 +5,15 @@ import Media from 'lib/models/basic/Media';
 import { v4 as uuidv4 } from 'uuid';
 import { type File } from 'formidable';
 import mongoose, { isValidObjectId, Model, Types } from 'mongoose';
-import {logError, safeParse, sanitizeText } from '../utils';
 import { NextApiRequest, NextApiResponse } from 'next';
-// import { uploadMediaToS3 } from 'services/uploadMediaToS3';
 import MediaHub, { MediaHubDoc } from 'lib/models/basic/MediaHub';
 import { createApiHandler } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import type { File as FormidableFile } from "formidable";
 import { AnyModel } from 'lib/models';
+import { safeParse, sanitizeText } from 'lib/services/dataService';
+import { logError } from 'lib/services/errorService';
 
 const MEDIA_PATH = path.join(process.cwd(), 'public', 'storage');
 

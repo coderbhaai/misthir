@@ -1,6 +1,6 @@
 import mongoose, { Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import { createApiHandler } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
@@ -9,7 +9,7 @@ import WishlistCart from 'lib/models/wishlist/WishlistCart';
 import { add_to_cart } from './ecom';
 import OrderGuide from 'lib/models/wishlist/OrderGuide';
 import OrderGuideProducts from 'lib/models/wishlist/OrderGuideProducts';
-import { getUserIdFromToken } from '../basic/auth';
+import { getUserIdFromToken } from 'lib/services/authService';
 
 export async function get_filtered_wishlist(req: NextApiRequest, res: NextApiResponse) {
   try {

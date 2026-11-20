@@ -5,7 +5,7 @@ import Sale, { SaleDoc } from 'lib/models/sales/Sale';
 import Product from 'lib/models/product/Product';
 import SkuProps from 'lib/models/product/Sku';
 import { APIHandlers } from 'lib/server/middleware';
-import { logError } from '../utils';
+import { logError } from 'lib/services/errorService';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import SaleTarget from 'lib/models/sales/SaleTarget';
 import BuyOneGetOne from 'lib/models/ecom/BuyOneGetOne';

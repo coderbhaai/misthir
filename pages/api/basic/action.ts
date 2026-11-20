@@ -2,7 +2,6 @@ import mongoose, { Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import Action from 'lib/models/basic/Action';
-import { logError } from '../utils';
 import { APIHandlers } from '../../../lib/server/middleware';
 import SpatieRole from 'lib/models/spatie/SpatieRole';
 import SpatiePermission from 'lib/models/spatie/SpatiePermission';
@@ -23,6 +22,7 @@ import SellerPayoutRequest from 'lib/models/seller/SellerPayoutRequest';
 import SellerIncomeSellerPayoutRequest from 'lib/models/seller/SellerIncomeSellerPayoutRequest';
 import TaxCollected from 'lib/models/tax/TaxCollected';
 import TaxCollectedSummary from 'lib/models/tax/TaxCollectedSummary';
+import { logError } from 'lib/services/errorService';
 
 // Actions
   export async function initAction(module: string, module_id: Types.ObjectId | string) {
@@ -72,7 +72,7 @@ export async function test(req: ExtendedRequest, res: NextApiResponse) {
     // const result = await init_registry();
 
     // const response = await clear_cart();
-    const response = create_spatie();
+    // const response = create_spatie();
     // const response = create_pages();
     // const response = migrate()
     // const response = db_correct()

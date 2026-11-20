@@ -1,10 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { logError, safeParse } from '../utils';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import Review from 'lib/models/basic/Review';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Keyword from 'lib/models/basic/Keyword';
+import { logError } from 'lib/services/errorService';
+import { safeParse } from 'lib/services/dataService';
 
 export async function create_update_keyword(req: ExtendedRequest, res: NextApiResponse) { 
   try {

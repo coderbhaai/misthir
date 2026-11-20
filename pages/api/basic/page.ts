@@ -4,8 +4,6 @@ import Page from 'lib/models/basic/Page';
 import { uploadMedia } from './media';
 import { generateSitemap, slugify, upsertMeta } from './meta';
 import PageDetail from 'lib/models/basic/PageDetail';
-import { checkNullValue, getBlockContent, getRelatedContent, logError } from '../utils';
-
 import models from "lib/models";
 import Faq from 'lib/models/basic/Faq';
 import Testimonial from 'lib/models/basic/Testimonial';
@@ -17,9 +15,11 @@ import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Product from 'lib/models/product/Product';
-import { getUserIdFromToken } from './auth';
 import Achievement from 'lib/models/basic/Achievement';
 import UrlRegistry, { UrlRegistryProps } from 'lib/models/basic/UrlRegistry';
+import { getUserIdFromToken } from 'lib/services/authService';
+import { logError } from 'lib/services/errorService';
+import { checkNullValue, getBlockContent, getRelatedContent } from 'lib/services/dataService';
 
 type PageInput = {
   name: string;

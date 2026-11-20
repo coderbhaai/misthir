@@ -7,7 +7,8 @@ import GenericBlock from 'lib/models/block/GenericBlock';
 import BlockDetail from 'lib/models/block/BlockDetail';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import TabBlock from 'lib/models/block/TabBlock';
-import { cleanContent, logError } from '../utils';
+import { logError } from 'lib/services/errorService';
+import { cleanContent } from 'lib/services/dataService';
 
 // Generic Block
   export async function get_filtered_generic_blocks(req: NextApiRequest, res: NextApiResponse) {
