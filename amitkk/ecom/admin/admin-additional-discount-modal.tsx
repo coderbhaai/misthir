@@ -16,7 +16,7 @@ type AdminAdditionalDiscountModalProps = {
     admin_discount?: number | string;
     admin_discount_validity_value?: number | string;
     admin_discount_unit?: number | string;
-    vendor_discount?: number | string;
+    seller_discount?: number | string;
   };
 };
 

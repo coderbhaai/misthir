@@ -53,15 +53,15 @@ export interface CartSkuProps{
   flavor_id?: string;
   price: number;
   sale: number;
-  vendor_discount?: number;
-  vendor_discount_validity?: Date;
-  vendor_discount_unit?: string;
-  vendor_discount_validity_value?: number;
+  seller_discount?: number;
+  seller_discount_validity?: Date;
+  seller_discount_unit?: string;
+  seller_discount_validity_value?: number;
   createdAt: Date;
   updatedAt: Date;
   
   product: { name: string; price?: number }
-  vendor: { name: string };
+  seller: { name: string };
   sku: { price: number };
 }
 
@@ -71,7 +71,7 @@ export interface CartChargesProps{
   shipping_chargeable_value?: number;
   sales_discount?: number;
   admin_discount?: number;
-  total_vendor_discount?: number;
+  total_seller_discount?: number;
   cod_charges?: number;
 }
 
@@ -121,14 +121,14 @@ export interface OrderSkuProps{
   seller_id: string | UserRowProps;
   quantity: number;
   flavor_id?: string;
-  vendor_discount?: number;
-  vendor_discount_validity?: Date;
-  vendor_discount_unit?: string;
-  vendor_discount_validity_value?: number;
+  seller_discount?: number;
+  seller_discount_validity?: Date;
+  seller_discount_unit?: string;
+  seller_discount_validity_value?: number;
   createdAt: Date;
   updatedAt: Date;
   product: { name: string; price?: number };
-  vendor: { name: string };
+  seller: { name: string };
   sku: { price: number };
 }
 
@@ -138,7 +138,7 @@ export interface OrderChargesProps{
   shipping_chargeable_value?: number;
   sales_discount?: number;
   admin_discount?: number;
-  total_vendor_discount?: number;
+  total_seller_discount?: number;
   cod_charges?: number;
 }
 
@@ -155,7 +155,7 @@ export interface BulkProps{
   quantity: number;
   user_remarks?: string;
   admin_remarks?: string;
-  vendor_remarks?: string;
+  seller_remarks?: string;
   createdAt: Date;
   updatedAt: Date;
 };

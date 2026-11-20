@@ -1,6 +1,6 @@
 import mongoose, { Schema, Types, Document, model } from "mongoose";
 
-interface VendorDoc extends Document<Types.ObjectId> {
+interface SellerDoc extends Document<Types.ObjectId> {
   user_id?: Types.ObjectId;
   adminApproval: boolean;
   heading?: string;
@@ -11,7 +11,7 @@ interface VendorDoc extends Document<Types.ObjectId> {
   products?: { product_id: Types.ObjectId }[];
 }
 
-const vendorSchema = new Schema<VendorDoc>({
+const SellerSchema = new Schema<SellerDoc>({
     user_id: { type: Schema.Types.ObjectId, ref: "User" },
     adminApproval: { type: Boolean, default: true },
     heading: { type: String, required: false },
@@ -20,4 +20,4 @@ const vendorSchema = new Schema<VendorDoc>({
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-export default mongoose.models.Vendor || model<VendorDoc>("Vendor", vendorSchema);
+export default mongoose.models.Seller || model<SellerDoc>("Seller", SellerSchema);

@@ -67,7 +67,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("function", "create_update_document");
       formDataToSend.append("user_id", formData.user_id as string);
       formDataToSend.append("name", formData.name);
-      formDataToSend.append("path", "vendor");
+      formDataToSend.append("path", "seller");
 
       const mediaIdToSend = formData.media_id && typeof formData.media_id === "object" && "_id" in formData.media_id 
         ? String((formData.media_id as MediaProps)._id) : typeof formData.media_id === "string" && formData.media_id !== "null" ? formData.media_id : "";

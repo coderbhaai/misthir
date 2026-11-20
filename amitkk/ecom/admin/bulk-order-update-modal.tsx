@@ -19,12 +19,12 @@ interface DataProps extends BulkProps{
 
 type DataFormProps = TableDataFormProps & {
   handleUpdate: () => Promise<void>;
-  vendor_options: OptionProps[];
+  seller_options: OptionProps[];
   // product_options: OptionProps[];
   // sku_options: OptionProps[];
 };
 
-export default function DataModal({ open, handleClose, selectedDataId, handleUpdate, vendor_options }: DataFormProps) {
+export default function DataModal({ open, handleClose, selectedDataId, handleUpdate, seller_options }: DataFormProps) {
   const initialFormData: DataProps = {
     _id: '',
     function: 'update_bulk_order',
@@ -38,7 +38,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     quantity: 0,
     user_remarks: '',
     admin_remarks: '',
-    vendor_remarks: '',
+    seller_remarks: '',
     createdAt: new Date(),
     updatedAt: new Date(),
     selectedDataId,
@@ -73,7 +73,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
             quantity: res?.data?.quantity || 0,
             user_remarks: res?.data?.user_remarks || '',
             admin_remarks: res?.data?.admin_remarks || '',
-            vendor_remarks: res?.data?.vendor_remarks || '',
+            seller_remarks: res?.data?.seller_remarks || '',
             createdAt: res?.data?.createdAt || new Date(),
             updatedAt: new Date(),
             selectedDataId: res?.data?._id || '',
@@ -136,7 +136,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
   const STATUS_OPTIONS = [
     { label: "All Status", value: "" },
     { label: "Requested", value: "Requested" },
-    { label: "Passed to Vendor", value: "Passed to Vendor" },
+    { label: "Passed to Seller", value: "Passed to Seller" },
     { label: "Quoted", value: "Quoted" },
     { label: "Postponed", value: "Postponed" },
     { label: "Closed", value: "Closed" },
@@ -150,11 +150,11 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
           <TextField label='Phone' value={formData.phone} name='phone' onChange={handleChange} required/>
           <TextField label='Quantity' type="number" value={formData.quantity} name='quantity' onChange={handleChange} required/>
           <OpenSelect name={String(formData.status)} label="Status" value={formData.status} onChange={(value) => setFormData((prev) => ({...prev, status: value}))} options={STATUS_OPTIONS}/>
-          <GenericSelect label="Vendor" name="seller_id" value={formData.seller_id?.toString() ?? ""} options={vendor_options} onChange={(val) => setFormData({ ...formData, seller_id: val as string })}/>
+          <GenericSelect label="Seller" name="seller_id" value={formData.seller_id?.toString() ?? ""} options={seller_options} onChange={(val) => setFormData({ ...formData, seller_id: val as string })}/>
           <GenericSelect label="Product" name="product_id" value={formData.product_id?.toString() ?? ""} options={product_options} onChange={(val) => setFormData({ ...formData, product_id: val as string })}/>
           <GenericSelect label="SKU" name="sku_id" value={formData.sku_id?.toString() ?? ""} options={sku_options} onChange={(val) => setFormData({ ...formData, sku_id: val as string })}/>
           <Textarea label="User Message" value={formData.user_remarks} name="user_remarks" onChange={handleChange} rows={2}/>
-          <Textarea label="Vendor Message" value={formData.vendor_remarks} name="vendor_remarks" onChange={handleChange} rows={2}/>
+          <Textarea label="Seller Message" value={formData.seller_remarks} name="seller_remarks" onChange={handleChange} rows={2}/>
           <Textarea label="Admin Message" value={formData.admin_remarks} name="admin_remarks" onChange={handleChange} rows={2}/>
           <Button type='submit' color='primary'>Connect Now</Button>
       </form>

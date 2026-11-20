@@ -4,7 +4,7 @@ import ImageUpload from '@amitkk/components/admin/file-input';
 import MediaImage from '@amitkk/components/admin/table-image';
 import CustomModal from '@amitkk/basic/static/CustomModal';
 import { TableDataFormProps, apiRequest,  clo, hitToastr  } from "@amitkk/basic/utils/my-utils/admin-utils";
-import { useVendorId } from 'hooks/useVendorId';
+import { useSellerId } from 'hooks/useSellerId';
 import { useFormHandler } from 'hooks/useFormHandler';
 import { MediaProps, SingleMediaProps } from '@amitkk/basic/types/media';
 import { TextField } from '@amitkk/components/basic/TextField';
@@ -16,7 +16,7 @@ type DataFormProps = TableDataFormProps & {
 };
 
 export default function DataModal({ open, handleClose, selectedDataId, handleUpdate }: DataFormProps) {
-  const seller_id = useVendorId();
+  const seller_id = useSellerId();
   const initialFormData: SingleMediaProps = {
     _id: '',
     alt: 'Image',

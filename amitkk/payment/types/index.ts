@@ -12,13 +12,20 @@ export type TaxCollectedProps = {
   _id: string;
   module: string;
   module_id: string;
-  cgst?: DecimalValue;
-  sgst?: DecimalValue;
-  igst?: DecimalValue;
-  total?: DecimalValue;
+  tax_id: string | TaxProps;
+  tax_rate: string;
+  price: number;
+  quantity: number;
+  admin_discount?: number;
+  seller_discount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  total?: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
 export type SiteSettingProps = {
   _id: string;
   module: string;

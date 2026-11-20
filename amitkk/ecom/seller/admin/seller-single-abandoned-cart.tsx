@@ -7,7 +7,7 @@ import { CartProps, CartSkuProps } from '@amitkk/ecom/types';
 import PaymentStatic from "@amitkk/ecom/static/PaymentStatic";
 import { semiAddress } from "@amitkk/address/utils/addressUtils";
 import CartCharges from "@amitkk/ecom/static/CartCharges";
-import VendorDiscountModal from "@amitkk/ecom/seller/admin/VendorDiscountModal";
+import SellerDiscountModal from "@amitkk/ecom/seller/admin/SellerDiscountModal";
 import dayjs from "dayjs";
 import { TextField } from "@amitkk/components/basic/TextField";
 import { Button } from "@amitkk/components/button/button";
@@ -129,11 +129,11 @@ export const SellerSingleAbandonedCart: React.FC<DataFormProps> = ({ dataId = ""
         <div className="rounded-2xl p-4 border border-border bg-card sticky top-5 space-y-4 shadow-sm">
           <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
             {cart && cart?.cartSkus?.map((item) => {
-              const vendorDiscount = item.vendor_discount != null ? Number(item.vendor_discount) : null;
-              const hasVendorDiscount = vendorDiscount !== null && !Number.isNaN(vendorDiscount);
-              const validityDate = item.vendor_discount_validity ? new Date(item.vendor_discount_validity) : null;
-              const validityValue = item.vendor_discount_validity_value;
-              const validityUnit = item.vendor_discount_unit;
+              const sellerDiscount = item.seller_discount != null ? Number(item.seller_discount) : null;
+              const hasSellerDiscount = sellerDiscount !== null && !Number.isNaN(sellerDiscount);
+              const validityDate = item.seller_discount_validity ? new Date(item.seller_discount_validity) : null;
+              const validityValue = item.seller_discount_validity_value;
+              const validityUnit = item.seller_discount_unit;
               const now = new Date();
               const isExpired = validityDate ? validityDate.getTime() < now.getTime() : false;
 
@@ -173,9 +173,9 @@ export const SellerSingleAbandonedCart: React.FC<DataFormProps> = ({ dataId = ""
                       <span>Set Discount</span>
                     </div>
 
-                    {hasVendorDiscount && (
+                    {hasSellerDiscount && (
                       <span className="text-[11px] text-muted-foreground mt-0.5">
-                        ₹{vendorDiscount}{" "}
+                        ₹{sellerDiscount}{" "}
                         {validityDate ? (
                           <span>Per Unit (till {dayjs(validityDate).format("DD MMM YYYY HH:mm")})</span>
                         ) : validityValue ? (
@@ -205,7 +205,7 @@ export const SellerSingleAbandonedCart: React.FC<DataFormProps> = ({ dataId = ""
       </div>
 
       {selectedSku && (
-        <VendorDiscountModal
+        <SellerDiscountModal
           open={Boolean(selectedSku)}
           handleClose={() => setSelectedSku(null)}
           cartSku={selectedSku}

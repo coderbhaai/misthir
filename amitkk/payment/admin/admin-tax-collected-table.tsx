@@ -30,6 +30,12 @@ export function AdminDataTable({ row }: Props) {
   return (
     <TableRow>
       <TableCell>{row.module}</TableCell>
+      <TableCell>{row.module}</TableCell>
+      <TableCell>{row.tax_rate}</TableCell>
+      <TableCell>
+        {row.admin_discount && (<>Admin Discount : {row.admin_discount}<br/></>)}
+        {row.seller_discount && (<>Seller Discount : {row.seller_discount}<br/></>)}
+      </TableCell>
       <TableCell>{row.cgst || 0}</TableCell>
       <TableCell>{row.sgst || 0}</TableCell>
       <TableCell>{row.igst || 0}</TableCell>

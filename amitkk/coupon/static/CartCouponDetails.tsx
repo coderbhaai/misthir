@@ -4,7 +4,7 @@ interface CartCouponDetailsProps {
   coupon?: {
     coupon_code?: string;
     admin_coupon_discount?: number;
-    vendor_coupon_discount?: number;
+    seller_coupon_discount?: number;
     coupon_id?: {
       name?: string;
       code?: string;
@@ -21,8 +21,8 @@ export default function CartCouponDetails({ coupon }: CartCouponDetailsProps) {
 
   const code = coupon.coupon_code || coupon.coupon_id?.code || "N/A";
   const adminDiscount = coupon.admin_coupon_discount ?? 0;
-  const vendorDiscount = coupon.vendor_coupon_discount ?? 0;
-  const totalDiscount = adminDiscount + vendorDiscount;
+  const sellerDiscount = coupon.seller_coupon_discount ?? 0;
+  const totalDiscount = adminDiscount + sellerDiscount;
 
   return (
     <div className="space-y-1 text-xs">
@@ -32,9 +32,9 @@ export default function CartCouponDetails({ coupon }: CartCouponDetailsProps) {
       {totalDiscount > 0 && (
         <div className="text-muted-foreground">
           Discount: <span className="font-medium text-foreground">₹{totalDiscount}</span>
-          {adminDiscount > 0 && vendorDiscount > 0 && (
+          {adminDiscount > 0 && sellerDiscount > 0 && (
             <span className="block text-[10px] text-gray-500">
-              (Admin: ₹{adminDiscount} | Vendor: ₹{vendorDiscount})
+              (Admin: ₹{adminDiscount} | Seller: ₹{sellerDiscount})
             </span>
           )}
         </div>

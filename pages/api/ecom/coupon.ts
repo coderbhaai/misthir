@@ -370,12 +370,12 @@ export async function handleApplyCoupon(cart_id: string, coupon_code: string) {
 
   let discount_amount = coupon.discount_type === "Percent Based" ? (totalEligibleAmount * (coupon.discount || 0)) / 100 : (coupon.discount || 0);
   let admin_coupon_discount = coupon.coupon_by === "Seller" ? 0 : discount_amount;
-  let vendor_coupon_discount = coupon.coupon_by === "Seller" ? discount_amount : 0;
+  let seller_coupon_discount = coupon.coupon_by === "Seller" ? discount_amount : 0;
 
   await upsertCartCoupon(cart_id, {
     coupon_id: coupon._id,
     admin_coupon_discount,
-    vendor_coupon_discount,
+    seller_coupon_discount,
     coupon_code,
   });
 

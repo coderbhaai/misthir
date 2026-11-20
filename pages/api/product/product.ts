@@ -15,7 +15,7 @@ import ProductProductBrand from 'lib/models/product/ProductProductBrand';
 import Sku from 'lib/models/product/Sku';
 import SkuProductFeature from 'lib/models/product/SkuProductFeature';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
-import Tax from 'lib/models/payment/Tax';
+import Tax from 'lib/models/tax/Tax';
 import { getReviews } from '../basic/review';
 import BulkOrder from 'lib/models/ecom/BulkOrder';
 import { initAction } from '../basic/action';
@@ -644,7 +644,7 @@ export async function get_sku_options(req: NextApiRequest, res: NextApiResponse)
           quantity: data.quantity,
           user_remarks: data.user_remarks,
           admin_remarks: data.admin_remarks,
-          vendor_remarks: data.vendor_remarks,
+          seller_remarks: data.seller_remarks,
           updatedAt: new Date(),
         },{ new: true, upsert: true }
       );

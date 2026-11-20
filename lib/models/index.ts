@@ -62,7 +62,7 @@ import ProductProductSpecification from "./product/ProductProductSpecification";
 import Sku from "./product/Sku";
 import SkuDetail from "./product/SkuDetail";
 import SkuProductFeature from "./product/SkuProductFeature";
-import Vendor from "./product/Vendor";
+import Seller from "./product/Seller";
 
 import Address from "./address/Address";
 import City from "./address/City";
@@ -82,9 +82,11 @@ import CartConsent from "./ecom/CartConsent";
 import SellerServiceArea from "./ecom/SellerServiceArea";
 
 import SiteSetting from "./payment/SiteSetting";
-import Tax from "./payment/Tax";
 import RazorpayPayment from "./payment/RazorpayPayment";
-import TaxCollected from "./payment/TaxCollected";
+
+import Tax from "./tax/Tax";
+import TaxCollected from "./tax/TaxCollected";
+import TaxCollectedSummary from "./tax/TaxCollectedSummary";
 
 import Coupon from "./coupon/Coupon";
 import CouponTarget from "./coupon/CouponTarget";
@@ -102,6 +104,11 @@ import OrderGuide from "./wishlist/OrderGuide";
 import OrderGuideProducts from "./wishlist/OrderGuideProducts";
 
 import { auditLoggerPlugin } from "lib/server/plugins/auditLogger";
+
+import SellerIncome from "./seller/SellerIncome";
+import SellerPayoutRequest from "./seller/SellerPayoutRequest";
+import SellerIncomeSellerPayoutRequest from "./seller/SellerIncomeSellerPayoutRequest";
+import Payment from "./seller/Payment";
 
 const rawModels: Record<string, any> = {
  // Refrences
@@ -127,10 +134,13 @@ const rawModels: Record<string, any> = {
   Cart, CartSku, CartCharges, CartSkuDetail, Order, OrderSku, OrderCharges, CartConsent, OrderConsent, OrderOrderConsent, SellerServiceArea, 
 
   // Product
-  BankDetail, Commission, Documentation, Ingridient, Product, ProductBrand, ProductFeature, ProductIngridient, Productmeta, ProductSpecification, ProductProductBrand, ProductProductFeature, ProductProductmeta, ProductProductSpecification, Sku, SkuDetail, SkuProductFeature, Vendor, ProductFilter, 
+  BankDetail, Commission, Documentation, Ingridient, Product, ProductBrand, ProductFeature, ProductIngridient, Productmeta, ProductSpecification, ProductProductBrand, ProductProductFeature, ProductProductmeta, ProductProductSpecification, Sku, SkuDetail, SkuProductFeature, Seller, ProductFilter, 
 
   // Payment
-  SiteSetting, Tax, RazorpayPayment, TaxCollected,
+  SiteSetting, RazorpayPayment,
+
+  // Tax
+  Tax, TaxCollected, TaxCollectedSummary, 
 
   // Block
   GenericBlock, TabBlock, BlockQuote, BlockDetail, 
@@ -143,6 +153,9 @@ const rawModels: Record<string, any> = {
 
   // Wishlist
   WishlistCart, Wishlist, OrderGuideProducts, OrderGuide, 
+
+  // Seller
+  SellerIncome, SellerPayoutRequest, SellerIncomeSellerPayoutRequest, Payment, 
 };
 
 export type AnyModel = mongoose.Model<any, any, any, any, any, any>;

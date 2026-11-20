@@ -15,7 +15,7 @@ export  function AdminCommission(){
 
     const head: { id: string; label: string }[] = [
                     { id: "type", label: "Type" },
-                    { id: "vendor", label: "Vendor" },
+                    { id: "Seller", label: "Seller" },
                     { id: "commission", label: "commission" },
                     { id: "date", label: "Date" },
                     { id: "", label: "" },

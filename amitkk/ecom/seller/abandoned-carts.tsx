@@ -5,7 +5,7 @@ import { useAdminPage } from "hooks/useAdminPage";
 import { AdminDataTable, DataProps } from "@amitkk/ecom/seller/admin/seller-abandoned-cart-table";
 
 export function SellerAbandonedCart() {
-    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/ecom", listFunction: "get_vendor_abandoned_carts" });
+    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/ecom", listFunction: "get_seller_abandoned_carts" });
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },

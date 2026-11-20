@@ -140,12 +140,12 @@ export async function get_product_sale_modules(req: NextApiRequest, res: NextApi
   } catch (error) { return await logError(error, { function: "get_product_sale_modules", payload: req.body }); }
 }
 
-export async function getEffectiveSkuPrice(sku: SkuProps, vendorId: Types.ObjectId): Promise<number> {
+export async function getEffectiveSkuPrice(sku: SkuProps, seller_id: Types.ObjectId): Promise<number> {
   if (!sku?.price) return 0;
 
   const now = new Date();
   const activeSales = await Sale.find({
-    seller_id: vendorId,
+    seller_id,
     valid_from: { $lte: now },
     valid_to: { $gte: now },
     status: true,

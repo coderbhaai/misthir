@@ -14,7 +14,7 @@ export  function AdminBankDetail(){
     ] as const;
 
     const head: { id: string; label: string }[] = [
-                    { id: "vendor", label: "Vendor" },
+                    { id: "Seller", label: "Seller" },
                     { id: "account", label: "Account" },
                     { id: "ifsc", label: "IFSC" },
                     { id: "branch", label: "Branch" },

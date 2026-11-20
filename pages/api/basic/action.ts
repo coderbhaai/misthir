@@ -14,6 +14,15 @@ import Page from 'lib/models/basic/Page';
 import CartSku from 'lib/models/ecom/CartSku';
 import CartSkuDetail from 'lib/models/ecom/CartSkuDetail';
 import Cart from 'lib/models/ecom/Cart';
+import OrderCharges from 'lib/models/ecom/OrderCharges';
+import Order from 'lib/models/ecom/Order';
+import OrderConsent from 'lib/models/ecom/OrderConsent';
+import Payment from 'lib/models/seller/Payment';
+import SellerIncome from 'lib/models/seller/SellerIncome';
+import SellerPayoutRequest from 'lib/models/seller/SellerPayoutRequest';
+import SellerIncomeSellerPayoutRequest from 'lib/models/seller/SellerIncomeSellerPayoutRequest';
+import TaxCollected from 'lib/models/tax/TaxCollected';
+import TaxCollectedSummary from 'lib/models/tax/TaxCollectedSummary';
 
 // Actions
   export async function initAction(module: string, module_id: Types.ObjectId | string) {
@@ -75,9 +84,20 @@ export async function test(req: ExtendedRequest, res: NextApiResponse) {
 }
 
 async function clear_cart() {
-  await Cart.deleteMany({});
-  await CartSku.deleteMany({});
+  console.log("clear_cart Called")
+  // await Cart.deleteMany({});
+  // await CartSku.deleteMany({});
+  // await CartSkuDetail.deleteMany({});
+  await Order.deleteMany({});
+  await OrderCharges.deleteMany({});
+  await OrderConsent.deleteMany({});
   await CartSkuDetail.deleteMany({});
+  await Payment.deleteMany({});
+  await SellerIncome.deleteMany({});
+  await SellerPayoutRequest.deleteMany({});
+  await SellerIncomeSellerPayoutRequest.deleteMany({});
+  await TaxCollectedSummary.deleteMany({});
+  await TaxCollected.deleteMany({});
 }
 
 async function init_registry(){
@@ -131,6 +151,7 @@ export async function create_spatie(){
       { name: 'Block Detail', url: '/admin/block-detail',  status: 1, permission: 'SEO', menu: ["Blocks"] },
       
       { name: 'Tax Collected', url: '/admin/tax-collected',  status: 1, permission: 'Ecom', menu: ["Payment"] },
+      { name: 'Tax Summary', url: '/admin/tax-collected-summary',  status: 1, permission: 'Ecom', menu: ["Payment"] },
       { name: 'Setting', url: '/admin/setting',  status: 1, permission: 'Ecom', menu: ["Payment"] },
       { name: 'Taxes', url: '/admin/taxes',  status: 1, permission: 'Ecom', menu: ["Payment"] },
 

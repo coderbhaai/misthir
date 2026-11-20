@@ -259,8 +259,8 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
   }
 // ProductBrand
 
-// Vendor
-  export async function get_single_vendor(req: NextApiRequest, res: NextApiResponse){
+// Seller
+  export async function get_single_seller(req: NextApiRequest, res: NextApiResponse){
     const id = (req.method === 'GET' ? req.query.id : req.body.id) as string;
     if (!id || !Types.ObjectId.isValid(id)) { return res.status(400).json({ message: 'Invalid or missing ID' }); }
     
@@ -290,7 +290,7 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
       return await logError(error, { function: "get_user_module", payload: req.body });
     }
   }
-// Vendor
+// Seller
 
 // Ingridient
   export async function get_filtered_product_ingridients(req: NextApiRequest, res: NextApiResponse) {
@@ -463,7 +463,7 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 // Feature
 
 export const functions: APIHandlers = {
-  get_single_vendor : { middlewares: [] },
+  get_single_seller : { middlewares: [] },
   get_user_module : { middlewares: [] },
 
   get_filtered_product_meta : { middlewares: ["checkUserId", "checkPostMethod"] },
@@ -490,7 +490,7 @@ export const functions: APIHandlers = {
 }
 
 export const basicHandlers = {
-  get_single_vendor,
+  get_single_seller,
   get_user_module,
 
   get_filtered_product_meta,

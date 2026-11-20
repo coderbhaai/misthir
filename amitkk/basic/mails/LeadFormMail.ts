@@ -29,7 +29,7 @@ export async function LeadFormMail(lead_id: string) {
   const cc = ["amit@amitkk.com"];
 
   try {
-    await apiRequest("POST", basic/basic", {
+    const res = await apiRequest("POST", "basic/basic", {
       function: "get_single_lead_request",
       id: lead_id,
     });

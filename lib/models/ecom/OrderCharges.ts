@@ -7,7 +7,7 @@ export interface OrderChargesDoc extends Document<Types.ObjectId> {
   sales_discount?: number;
   admin_discount?: number;
   cod_charges?: number;
-  total_vendor_discount?: number;
+  total_seller_discount?: number;
 }
 
 const orderChargesSchema = new Schema<OrderChargesDoc>({
@@ -17,7 +17,7 @@ const orderChargesSchema = new Schema<OrderChargesDoc>({
     sales_discount: { type: Number },
     admin_discount: { type: Number },
     cod_charges: { type: Number },
-    total_vendor_discount: { type: Number },
+    total_seller_discount: { type: Number },
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 

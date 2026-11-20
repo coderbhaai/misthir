@@ -15,7 +15,7 @@ export function AdminBulkOrders() {
 
     const head: { id: string; label: string }[] = [
                     { id: "user", label: "User" },
-                    { id: "vendor", label: "Vendor" },
+                    { id: "Seller", label: "Seller" },
                     { id: "product", label: "Product" },
                     { id: "quantity", label: "Quantity" },
                     { id: "remarks", label: "Remarks" },

@@ -50,7 +50,7 @@ export function AdminDataTable({ row }: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[160px] space-y-1">
-              {hasAnyRole(["Vendor", "Staff"]) && hasPermission("Product Vendor") && (
+              {hasAnyRole(["Seller", "Staff"]) && hasPermission("Product Seller") && (
                 <DropdownMenuItem asChild>
                   <Link href={`/seller/add-update-product/${row._id}`} className="flex items-center gap-2 cursor-pointer">
                     <Edit className="h-4 w-4" /> Edit

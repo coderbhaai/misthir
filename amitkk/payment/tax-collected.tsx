@@ -14,6 +14,9 @@ export function AdminTaxCollected() {
 
     const head: { id: string; label: string }[] = [
                     { id: "module", label: "Module" },
+                    { id: "Purchase", label: "Purchase" },
+                    { id: "Tax", label: "Tax" },
+                    { id: "Discount", label: "Discount" },
                     { id: "cgst", label: "CGST" },
                     { id: "sgst", label: "SGST" },
                     { id: "sgst", label: "IGST" },

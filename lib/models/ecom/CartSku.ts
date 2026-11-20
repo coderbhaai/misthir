@@ -25,9 +25,6 @@ const cartSkuSchema = new Schema<CartSkuDoc>({
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-cartSkuSchema.virtual('product', { ref: 'Product', localField: 'product_id', foreignField: '_id', justOne: true, });
-cartSkuSchema.virtual('vendor', { ref: 'User', localField: 'seller_id', foreignField: '_id', justOne: true, });
-cartSkuSchema.virtual('sku', { ref: 'Sku', localField: 'sku_id', foreignField: '_id', justOne: true, });
 cartSkuSchema.virtual('details', { ref: 'CartSkuDetail', localField: '_id', foreignField: 'cart_sku_id', justOne: false });
 
 export default mongoose.models.CartSku || mongoose.model<CartSkuDoc>("CartSku", cartSkuSchema);

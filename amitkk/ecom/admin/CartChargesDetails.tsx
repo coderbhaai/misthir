@@ -13,7 +13,7 @@ const ChargesDetails: React.FC<ChargesDetailsProps> = ({ charges }) => {
     { label: "Shipping Chargeable Value", value: charges.shipping_chargeable_value },
     { label: "Sales Discount", value: charges.sales_discount },
     { label: "Admin Discount", value: charges.admin_discount },
-    { label: "Vendor Discount", value: charges.total_vendor_discount },
+    { label: "Seller Discount", value: charges.total_seller_discount },
     { label: "COD Charges", value: charges.cod_charges },
   ];
 

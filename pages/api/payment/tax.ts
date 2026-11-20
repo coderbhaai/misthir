@@ -1,10 +1,11 @@
 import { isValidObjectId, Types } from 'mongoose';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { NextApiRequest, NextApiResponse } from 'next';
-import TaxCollected from 'lib/models/payment/TaxCollected';
-import Tax from 'lib/models/payment/Tax';
+import TaxCollected from 'lib/models/tax/TaxCollected';
+import Tax from 'lib/models/tax/Tax';
 import { APIHandlers } from 'lib/server/middleware';
 import { logError } from '../utils';
+import TaxCollectedSummary from 'lib/models/tax/TaxCollectedSummary';
 
 export async function get_filtered_taxes(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -59,25 +60,39 @@ export async function create_update_tax(req: ExtendedRequest, res: NextApiRespon
   } catch (error) { return await logError(error, { function: "create_update_tax", payload: req.body }); }
 }
 
-export async function get_filtered_tax_collected(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const data = await TaxCollected.find().sort({ createdAt: -1 }).exec();
-    return res.status(200).json({ message: 'Fetched all TaxCollected', data });
-  } catch (error) { return await logError(error, { function: "get_filtered_tax_collected", payload: req.body }); }
-}
+// Tax Collection
+  export async function get_filtered_tax_collected(req: NextApiRequest, res: NextApiResponse) {
+    try {
+      const data = await TaxCollected.find().sort({ createdAt: -1 }).exec();
+      return res.status(200).json({ message: 'Fetched all TaxCollected', data });
+    } catch (error) { return await logError(error, { function: "get_filtered_tax_collected", payload: req.body }); }
+  }
+
+  export async function get_filtered_tax_collected_summary(req: NextApiRequest, res: NextApiResponse) {
+    try {
+      const data = await TaxCollectedSummary.find().sort({ createdAt: -1 }).exec();
+      return res.status(200).json({ message: 'Fetched all TaxCollected', data });
+    } catch (error) { return await logError(error, { function: "get_filtered_tax_collected_summary", payload: req.body }); }
+  }
+// Tax Collection
+
 
 export const functions: APIHandlers = {
   get_filtered_taxes : { middlewares: ["checkUserId", "checkPostMethod"] },
   get_single_tax : { middlewares: ["checkUserId", "checkPostMethod"] },
   create_update_tax : { middlewares: ["checkUserId", "checkPostMethod"] },
+
   get_filtered_tax_collected : { middlewares: ["checkUserId", "checkPostMethod"] },
+  get_filtered_tax_collected_summary : { middlewares: ["checkUserId", "checkPostMethod"] },
 }
 
 export const taxHandlers = {
   get_filtered_taxes,
   get_single_tax,
   create_update_tax,
+
   get_filtered_tax_collected,
+  get_filtered_tax_collected_summary,
 };
 
 export const config = { api: { bodyParser: false } };

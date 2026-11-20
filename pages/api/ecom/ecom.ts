@@ -5,7 +5,7 @@ import { getGenericContent, logError } from '../utils';
 import { getCartIdFromRequest, setCookie } from '../cartUtils';
 import Sku from 'lib/models/product/Sku';
 import Product from 'lib/models/product/Product';
-import TaxCollected from 'lib/models/payment/TaxCollected';
+import TaxCollected from 'lib/models/tax/TaxCollected';
 import { handleApplyCoupon } from './coupon';
 import { applySalesAndGetUpsells, getEffectiveSkuPrice } from './sales';
 import { initAction } from '../basic/action';
@@ -24,6 +24,7 @@ import Address from 'lib/models/address/Address';
 import CartConsent from 'lib/models/ecom/CartConsent';
 import OrderConsent from 'lib/models/ecom/OrderConsent';
 import OrderOrderConsent from 'lib/models/ecom/OrderOrderConsent';
+import { processModuleFinancials } from 'lib/services/financialService';
 
 export async function add_to_cart(req: any, res: any) {
   try {
@@ -175,7 +176,7 @@ export async function recalculateCart(cart_id: string) {
       }
     }
 
-    let totalVendorDiscount = updatedCart.cartSkus.reduce((sum: number, cartSku: any) => {
+    let totalSellerDiscount = updatedCart.cartSkus.reduce((sum: number, cartSku: any) => {
       let discount = 0;
       return sum + discount;
     }, 0 );
@@ -183,10 +184,10 @@ export async function recalculateCart(cart_id: string) {
     const shippingCharges = Number(charges.shipping_charges || 0);
     const codCharges = Number(charges.cod_charges || 0);
     const adminCoupon = Number(updatedCart.cartCoupon?.admin_coupon_discount || 0);
-    const vendorCoupon = Number(updatedCart.cartCoupon?.vendor_coupon_discount || 0);
+    const sellerCoupon = Number(updatedCart.cartCoupon?.seller_coupon_discount || 0);
 
     const payable_amount = total + shippingCharges + codCharges - (
-      sales_discount + admin_discount + totalVendorDiscount + adminCoupon + vendorCoupon
+      sales_discount + admin_discount + totalSellerDiscount + adminCoupon + sellerCoupon
     );
     
     updatedCart.total = total;
@@ -415,68 +416,10 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
         shipping_chargeable_value: cart.cartCharges.shipping_chargeable_value,
         sales_discount: cart.cartCharges.sales_discount,
         admin_discount: cart.cartCharges.admin_discount,
-        total_vendor_discount: cart.cartCharges.total_vendor_discount,
+        total_seller_discount: cart.cartCharges.total_seller_discount,
         cod_charges: cart.cartCharges.cod_charges,
       }).save();
     }
-
-    // if (cart.cartConsent) {
-    //   const { email, phone } = cart.cartConsent;
-    //   let orderConsentId;
-    //   let emailDuplicateFlag = false;
-    //   let phoneDuplicateFlag = false;
-
-    //   const [existingByEmail, existingByPhone] = await Promise.all([
-    //     email ? OrderConsent.findOne({ email }) : null,
-    //     phone ? OrderConsent.findOne({ phone }) : null,
-    //   ]);
-
-    //   if (existingByEmail && existingByPhone) {
-    //     orderConsentId = existingByEmail._id;
-    //     emailDuplicateFlag = true;
-    //     phoneDuplicateFlag = true;
-    //   } else if (existingByEmail) {
-    //     orderConsentId = existingByEmail._id;
-    //     emailDuplicateFlag = true;
-    //     phoneDuplicateFlag = false;
-    //   } else if (existingByPhone) {
-    //     orderConsentId = existingByPhone._id;
-    //     emailDuplicateFlag = false;
-    //     phoneDuplicateFlag = true;
-    //   } else {
-    //     const newConsent = await new OrderConsent({
-    //       user_id: cart.user_id,
-    //       email: email,
-    //       phone: phone,
-    //       city_id: cart.cartConsent.city_id,
-    //       state_id: cart.cartConsent.state_id,
-    //       country_id: cart.cartConsent.country_id,
-    //       emailConsent: cart.cartConsent.emailConsent,
-    //       phoneConsent: cart.cartConsent.phoneConsent,
-    //       email_duplicate: false,
-    //       phone_duplicate: false,
-    //     }).save();
-
-    //     orderConsentId = newConsent._id;
-    //   }
-      
-    //   if (orderConsentId && (emailDuplicateFlag || phoneDuplicateFlag)) {
-    //     await OrderConsent.updateOne(
-    //       { _id: orderConsentId },
-    //       { 
-    //         $set: { 
-    //           email_duplicate: emailDuplicateFlag, 
-    //           phone_duplicate: phoneDuplicateFlag 
-    //         } 
-    //       }
-    //     );
-    //   }
-
-    //   await new OrderOrderConsent({ 
-    //     order_id: savedOrder._id, 
-    //     orderConsent_id: orderConsentId 
-    //   }).save();
-    // }
   
     if (cart.cartCoupon && typeof cart.cartCoupon === 'object' && cart.cartCoupon.coupon_id) {
       const coupon = cart.cartCoupon.coupon_id as any;
@@ -485,7 +428,7 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
         order_id: savedOrder._id,
         coupon_id: cart.cartCoupon.coupon_id,
         admin_coupon_discount: cart.cartCoupon.admin_coupon_discount,
-        vendor_coupon_discount: cart.cartCoupon.vendor_coupon_discount,
+        seller_coupon_discount: cart.cartCoupon.seller_coupon_discount,
         coupon_code: cart.cartCoupon.coupon_code,
         coupon_by: coupon.coupon_by,
         usage_type: coupon.usage_type,
@@ -510,65 +453,52 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
     if (cart.cartCharges?.admin_discount && totalQuantity > 0) {
       perUnitAdminDiscount = cart.cartCharges.admin_discount / totalQuantity;
     }
-  
-    let totalTax = 0;
-  
+
+    const financialItems: any[] = [];
+    const orderSkuDocs: any[] = [];
+
     if (Array.isArray(cart.cartSkus) && cart.cartSkus.length > 0) {
-      const orderSkuDocs = cart.cartSkus.map((item: any) => {
+      cart.cartSkus.forEach((item: any) => {
         let effectivePrice = item.sale || 0;
         effectivePrice -= perUnitAdminDiscount;
 
-        if (item.vendor_discount) {
-          effectivePrice -= item.vendor_discount;
+        if (item.seller_discount) {
+          effectivePrice -= item.seller_discount;
         }
-        
+
         const quantity = item.quantity || 0;
-        const taxRate = item.product_id?.tax_id?.rate || 0;
-        const taxableAmount = effectivePrice * quantity;
-        const taxAmount = (taxableAmount * taxRate) / 100;
-  
-        totalTax += taxAmount;
-  
-        return {
+        orderSkuDocs.push({
           order_id: savedOrder._id,
+          product_id: item.product_id?._id || item.product_id,
+          sku_id: item.sku_id?._id || item.sku_id,
+          seller_id: item.seller_id,
+          price: item.sku_id?.price || item.price,
+          quantity,
+          admin_discount: perUnitAdminDiscount * quantity,
+          seller_discount: item.seller_discount || 0,
+          flavor_id: item.flavor_id,
+        });
+
+        financialItems.push({
           product_id: item.product_id,
           sku_id: item.sku_id,
           seller_id: item.seller_id,
-          price: item.sku_id?.price,
-          tax_id: item.product_id?.tax_id,
           quantity,
-          vendor_discount: item.vendor_discount,
-          flavor_id: item.flavor_id,
-        };
+          price: item.price,
+          effectivePrice,
+          admin_discount: perUnitAdminDiscount * quantity,
+          seller_discount: item.seller_discount || 0,
+        });
       });
-  
+
       await OrderSku.insertMany(orderSkuDocs);
     }
-  
-    let cgst = 0, sgst = 0, igst = 0;
-    const stateName = cart.billing_address_id?.city_id?.state_id?.name?.toLowerCase() || "";
-  
-    if (stateName === "haryana") {
-      cgst = totalTax;
-    } else {
-      sgst = totalTax / 2;
-      igst = totalTax / 2;
-    }
-    
-    const taxDoc = new TaxCollected({
-      module: "Order",
-      module_id: savedOrder._id,
-      cgst: cgst.toFixed(2),
-      sgst: sgst.toFixed(2),
-      igst: igst.toFixed(2),
-      total: totalTax.toFixed(2),
-    });
-    await taxDoc.save();
-    await initAction('Ecom', savedOrder._id as Types.ObjectId);
 
+    const billingState = cart.billing_address_id?.city_id?.state_id?.name || "";
+    await processModuleFinancials({ module: "Order", module_id: savedOrder._id, items: financialItems, billingState });
     await handleConsent(savedOrder._id, cart.cartConsent);
+    await initAction('Ecom', savedOrder._id as Types.ObjectId);
     return { status: true, message: "Order Placed", order_id };
-
   } catch (error) { return await logError(error, { function: "createOrderFromCart", payload: { cart_id } }); }
 }
 
@@ -665,12 +595,12 @@ export async function get_single_abdandoned_cart(req: NextApiRequest, res: NextA
   } catch (error) { return await logError(error, { function: "get_single_abdandoned_cart", payload: req.body }); }
 }
 
-export async function get_vendor_abandoned_carts(req: NextApiRequest, res: NextApiResponse) {
+export async function get_seller_abandoned_carts(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { seller_id } = req.query;
 
     if ( !seller_id || !mongoose.Types.ObjectId.isValid(seller_id as string)) {
-      return res.status(400).json({ message: "Issue with Vendor ID", data:[] });
+      return res.status(400).json({ message: "Issue with Seller ID", data:[] });
     }
     
     const cartIdsAgg = await CartSku.aggregate([
@@ -685,7 +615,7 @@ export async function get_vendor_abandoned_carts(req: NextApiRequest, res: NextA
       .populate([ { path: 'cartCharges' }, { path: 'user_id' }, { path: 'cartSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }]).exec();
 
     return res.status(200).json({ message: "Carts fetched", data });
-  } catch (error) { return await logError(error, { function: "get_vendor_abandoned_carts", payload: req.body }); }
+  } catch (error) { return await logError(error, { function: "get_seller_abandoned_carts", payload: req.body }); }
 }
 
 export async function apply_admin_discount(req: NextApiRequest, res: NextApiResponse) {
@@ -728,11 +658,11 @@ export async function apply_admin_discount(req: NextApiRequest, res: NextApiResp
   } catch (error) { return await logError(error, { function: "apply_admin_discount", payload: req.body }); }
 };
 
-export async function apply_vendor_discount(req: NextApiRequest, res: NextApiResponse) {
+export async function apply_seller_discount(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { data } = req.body;
     
-    if (!data.cartSku_id || !data.vendor_discount || !data.vendor_discount_validity_value || !data.vendor_discount_unit) { 
+    if (!data.cartSku_id || !data.seller_discount || !data.seller_discount_validity_value || !data.seller_discount_unit) { 
       return res.status(400).json({ status: false, message: 'Fields are Missing' }); 
     }
 
@@ -740,26 +670,26 @@ export async function apply_vendor_discount(req: NextApiRequest, res: NextApiRes
     if (!cartSku) { return res.status(400).json({ status: false, message: 'Sku Not Found' }); }
 
     let expiry: Date | null = null;
-    if (data.vendor_discount_validity_value && data.vendor_discount_unit) {
+    if (data.seller_discount_validity_value && data.seller_discount_unit) {
       const now = new Date();
-      if (data.vendor_discount_unit === "hours") {
-        expiry = new Date(now.getTime() + data.vendor_discount_validity_value * 60 * 60 * 1000);
-      } else if (data.vendor_discount_unit === "days") {
-        expiry = new Date(now.getTime() + data.vendor_discount_validity_value * 24 * 60 * 60 * 1000);
+      if (data.seller_discount_unit === "hours") {
+        expiry = new Date(now.getTime() + data.seller_discount_validity_value * 60 * 60 * 1000);
+      } else if (data.seller_discount_unit === "days") {
+        expiry = new Date(now.getTime() + data.seller_discount_validity_value * 24 * 60 * 60 * 1000);
       }
     }    
 
-    cartSku.vendor_discount = data.vendor_discount;
-    cartSku.vendor_discount_validity = expiry;
-    cartSku.vendor_discount_validity_value =  data.vendor_discount_validity_value;
-    cartSku.vendor_discount_unit = data.vendor_discount_unit;
+    cartSku.seller_discount = data.seller_discount;
+    cartSku.seller_discount_validity = expiry;
+    cartSku.seller_discount_validity_value =  data.seller_discount_validity_value;
+    cartSku.seller_discount_unit = data.seller_discount_unit;
 
     await cartSku.save();
 
     await recalculateCart(cartSku.cart_id);
 
     return res.status(200).json({ status: true, message: "Cart Updated" });
-  } catch (error) { return await logError(error, { function: "apply_vendor_discount", payload: req.body }); }
+  } catch (error) { return await logError(error, { function: "apply_seller_discount", payload: req.body }); }
 };
 
 export async function get_all_orders(req: NextApiRequest, res: NextApiResponse) {
@@ -778,19 +708,19 @@ export async function get_seller_orders(req: NextApiRequest, res: NextApiRespons
       return res.status(400).json({ message: "Invalid seller_id", data: [] });
     }
 
-    const vendorObjectId = new mongoose.Types.ObjectId(seller_id as string);
+    const selllerObjectId = new mongoose.Types.ObjectId(seller_id as string);
     
-    const orderSkus = await OrderSku.find({ seller_id: vendorObjectId }).select("order_id").exec();
+    const orderSkus = await OrderSku.find({ seller_id: selllerObjectId }).select("order_id").exec();
     const orderIds = orderSkus.map((s) => s.order_id);
 
-    if (orderIds.length === 0) { return res.status(200).json({ message: "No orders found for this vendor", data: [] }); }
+    if (orderIds.length === 0) { return res.status(200).json({ message: "No orders found for this Seller", data: [] }); }
     
     const orders = await Order.find({ _id: { $in: orderIds } })
       .populate([
         { path: "orderCharges" }, { path: "user_id" },
         {
           path: "orderSkus",
-          match: { seller_id: vendorObjectId },
+          match: { seller_id: selllerObjectId },
           populate: [
             { path: "sku_id" },
             {
@@ -804,7 +734,7 @@ export async function get_seller_orders(req: NextApiRequest, res: NextApiRespons
       ])
       .exec();
 
-    return res.status(200).json({ message: "Vendor orders fetched", data: orders });
+    return res.status(200).json({ message: "Seller orders fetched", data: orders });
   } catch (error) { return await logError(error, { function: "get_seller_orders", payload: req.body }); }
 }
 
@@ -864,8 +794,8 @@ export const functions: APIHandlers = {
   get_single_abdandoned_cart : { middlewares: [] },
   place_order : { middlewares: [] },
   apply_admin_discount : { middlewares: [] },
-  apply_vendor_discount : { middlewares: [] },
-  get_vendor_abandoned_carts : { middlewares: [] },
+  apply_seller_discount : { middlewares: [] },
+  get_seller_abandoned_carts : { middlewares: [] },
 
   get_all_orders : { middlewares: [] },
   get_seller_orders : { middlewares: [] },
@@ -886,8 +816,8 @@ export const ecomHandlers = {
   get_single_abdandoned_cart,
   place_order,
   apply_admin_discount,
-  apply_vendor_discount,
-  get_vendor_abandoned_carts,
+  apply_seller_discount,
+  get_seller_abandoned_carts,
 
   get_all_orders,
   get_seller_orders,

@@ -185,8 +185,8 @@ export const middlewareGroups: Record<string, (string | MiddlewareConfig)[]> = {
   authRequired: [ "checkUserId" ],
   postMethod: [ "checkPostMethod" ],
 
-  roleOwnerVendorStaff: [
-    { name: "checkRole", options: { roles: ["owner", "vendor", "staff"] } },
+  roleOwnerSellerStaff: [
+    { name: "checkRole", options: { roles: ["Owner", "Seller", "Staff"] } },
   ],
 
   canCreateOrUpdateReview: [

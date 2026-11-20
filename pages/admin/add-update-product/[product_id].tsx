@@ -1,7 +1,7 @@
 import SellerProductForm from '@amitkk/ecom/seller/admin/add-update-product-form';
 import { useRouter } from 'next/router';
 
-const EditAdminVendorProduct = () => {
+const EditAdminSellerProduct = () => {
   const router = useRouter();
   const { product_id } = router.query;
 
@@ -11,4 +11,4 @@ const EditAdminVendorProduct = () => {
   return <SellerProductForm dataId={product_id as string}/>;
 };
 
-export default EditAdminVendorProduct;
+export default EditAdminSellerProduct;

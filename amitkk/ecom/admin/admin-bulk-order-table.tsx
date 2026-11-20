@@ -28,7 +28,7 @@ export function AdminDataTable({ row, onEdit }: Props) {
         <TableCell>
           {row.user_remarks && ( <><strong>User:</strong> {row.user_remarks}<br/></> )}
           {row.admin_remarks && ( <><strong>Admin:</strong> {row.admin_remarks}<br/></> )}
-          {row.vendor_remarks && ( <><strong>Vendor:</strong> {row.vendor_remarks}</> )}
+          {row.seller_remarks && ( <><strong>Seller:</strong> {row.seller_remarks}</> )}
         </TableCell>
         <ActionCell row={row} modelName="" onEdit={onEdit}/>
       </TableRow>

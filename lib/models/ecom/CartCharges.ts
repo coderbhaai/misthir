@@ -9,11 +9,11 @@ export interface CartChargesDoc extends Document<Types.ObjectId> {
   admin_discount_validity?: Date;
   admin_discount_unit?: string;
   admin_discount_validity_value?: number;
-  total_vendor_discount?: number;
-  vendor_discount?: number;
-  vendor_discount_validity?: Date;
-  vendor_discount_unit?: string;
-  vendor_discount_validity_value?: number;
+  total_seller_discount?: number;
+  seller_discount?: number;
+  seller_discount_validity?: Date;
+  seller_discount_unit?: string;
+  seller_discount_validity_value?: number;
   cod_charges?: number;
 }
 
@@ -26,12 +26,12 @@ const cartChargesSchema = new Schema<CartChargesDoc>({
     admin_discount_validity: { type: Date, default: null },
     admin_discount_unit: { type: String, default: null },
     admin_discount_validity_value: { type: Number, default: null },
-    total_vendor_discount: { type: Number },
+    total_seller_discount: { type: Number },
     cod_charges: { type: Number },
-    vendor_discount: { type: Number, required: false },
-    vendor_discount_validity: { type: Date, default: null },
-    vendor_discount_unit: { type: String, default: null },
-    vendor_discount_validity_value: { type: Number, default: null },
+    seller_discount: { type: Number, required: false },
+    seller_discount_validity: { type: Date, default: null },
+    seller_discount_unit: { type: String, default: null },
+    seller_discount_validity_value: { type: Number, default: null },
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 

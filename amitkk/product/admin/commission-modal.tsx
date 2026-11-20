@@ -74,7 +74,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       const formDataToSend = new FormData();
 
       if (!formData.productmeta_id) { hitToastr("error", "Type is required."); return; }
-      if (!formData.seller_id) { hitToastr("error", "Vendor is required."); return; }
+      if (!formData.seller_id) { hitToastr("error", "Seller is required."); return; }
 
       formDataToSend.append("function", "create_update_commission");
       formDataToSend.append("productmeta_id", formData.productmeta_id as string);

@@ -4,7 +4,7 @@ import { Button } from "@amitkk/components/button/button";
 import CustomModal from "@amitkk/basic/static/CustomModal";
 import { apiRequest, clo, hitToastr } from "@amitkk/basic/utils/my-utils/admin-utils";
 
-type VendorDiscountModalProps = {
+type Props = {
   open: boolean;
   handleClose: () => void;
   cartSku: any;
@@ -13,31 +13,31 @@ type VendorDiscountModalProps = {
 };
 
 type FormData = {
-  vendor_discount: number | "";
-  vendor_discount_validity_value: number | "";
-  vendor_discount_unit: "hours" | "days" | "";
+  seller_discount: number | "";
+  seller_discount_validity_value: number | "";
+  seller_discount_unit: "hours" | "days" | "";
 };
 
-export default function VendorDiscountModal({ open, handleClose, cartSku, limit, refreshCart }: VendorDiscountModalProps) {
+export default function SellerDiscountModal({ open, handleClose, cartSku, limit, refreshCart }: Props) {
   const [formData, setFormData] = useState<FormData>({
-    vendor_discount: "",
-    vendor_discount_validity_value: "",
-    vendor_discount_unit: "hours",
+    seller_discount: "",
+    seller_discount_validity_value: "",
+    seller_discount_unit: "hours",
   });
 
   useEffect(() => {
     if (open && cartSku) {
       setFormData({
-        vendor_discount: cartSku.vendor_discount ?? "",
-        vendor_discount_validity_value: cartSku.vendor_discount_validity_value ?? "",
-        vendor_discount_unit: cartSku.vendor_discount_unit ?? "hours",
+        seller_discount: cartSku.seller_discount ?? "",
+        seller_discount_validity_value: cartSku.seller_discount_validity_value ?? "",
+        seller_discount_unit: cartSku.seller_discount_unit ?? "hours",
       });
     }
   }, [open, cartSku]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === "vendor_discount") {
+    if (name === "seller_discount") {
       const num = Number(value);
       if (num > limit) { hitToastr("error", `Discount cannot exceed ₹${limit}`); return; }
     }
@@ -46,18 +46,18 @@ export default function VendorDiscountModal({ open, handleClose, cartSku, limit,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (Number(formData.vendor_discount) > limit) { hitToastr("error", `Discount cannot exceed ₹${limit}`); return; }
-    if (Number(formData.vendor_discount) < 1) { hitToastr("error", `Discount cannot be below ₹1`); return; }
-    if (Number(formData.vendor_discount_validity_value) < 1) { hitToastr("error", `Discount Time cannot be below ₹1`); return; }
+    if (Number(formData.seller_discount) > limit) { hitToastr("error", `Discount cannot exceed ₹${limit}`); return; }
+    if (Number(formData.seller_discount) < 1) { hitToastr("error", `Discount cannot be below ₹1`); return; }
+    if (Number(formData.seller_discount_validity_value) < 1) { hitToastr("error", `Discount Time cannot be below ₹1`); return; }
 
     try {
       const payload = {
-        function: "apply_vendor_discount",
+        function: "apply_seller_discount",
         data: {
           cartSku_id: cartSku._id,
-          vendor_discount: Number(formData.vendor_discount) || 0,
-          vendor_discount_validity_value: Number(formData.vendor_discount_validity_value),
-          vendor_discount_unit: formData.vendor_discount_unit,
+          seller_discount: Number(formData.seller_discount) || 0,
+          seller_discount_validity_value: Number(formData.seller_discount_validity_value),
+          seller_discount_unit: formData.seller_discount_unit,
         }
       };
 
@@ -72,10 +72,10 @@ export default function VendorDiscountModal({ open, handleClose, cartSku, limit,
   return (
     <CustomModal open={open} handleClose={handleClose} title="Give Discount">
       <form onSubmit={handleSubmit} className="space-y-4">
-          <TextField label={`Discount (Limit - ${limit})`} type="number" value={formData.vendor_discount} name="vendor_discount" onChange={handleChange} required/>
+          <TextField label={`Discount (Limit - ${limit})`} type="number" value={formData.seller_discount} name="seller_discount" onChange={handleChange} required/>
           <div className="flex gap-2">
-            <TextField label="Validity" type="number" value={formData.vendor_discount_validity_value} name="vendor_discount_validity_value" onChange={handleChange} required/>
-            <TextField select label="Unit" value={formData.vendor_discount_unit} name="vendor_discount_unit" onChange={handleChange} required>
+            <TextField label="Validity" type="number" value={formData.seller_discount_validity_value} name="seller_discount_validity_value" onChange={handleChange} required/>
+            <TextField select label="Unit" value={formData.seller_discount_unit} name="seller_discount_unit" onChange={handleChange} required>
               <MenuItem value="hours">Hours</MenuItem>
               <MenuItem value="days">Days</MenuItem>
             </TextField>

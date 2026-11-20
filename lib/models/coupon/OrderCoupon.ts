@@ -4,7 +4,7 @@ export interface OrderCouponDoc extends Document<Types.ObjectId> {
   order_id: string | Types.ObjectId;
   coupon_id?: string | Types.ObjectId;
   admin_coupon_discount: number;
-  vendor_coupon_discount: number;
+  seller_coupon_discount: number;
   coupon_code?: string;
   coupon_by: string;
   usage_type: string;
@@ -25,7 +25,7 @@ const orderCouponSchema = new Schema<OrderCouponDoc>({
     order_id: { type: Schema.Types.ObjectId, required: true, ref: 'Order', },
     coupon_id: { type: Schema.Types.ObjectId, required: false, ref: 'Coupon', },
     admin_coupon_discount: { type: Number, required: false, },
-    vendor_coupon_discount: { type: Number, required: false, },
+    seller_coupon_discount: { type: Number, required: false, },
     coupon_code: { type: String, default: null },
     coupon_by: { type: String, required: true },
     usage_type: { type: String, required: true },

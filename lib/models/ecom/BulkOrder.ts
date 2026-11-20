@@ -12,7 +12,7 @@ export interface BulkOrderDoc extends Document<Types.ObjectId> {
   quantity: number,
   user_remarks?: string;
   admin_remarks?: string;
-  vendor_remarks?: string;
+  seller_remarks?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,7 +29,7 @@ const bulkOrderSchema = new Schema<BulkOrderDoc>({
     quantity: { type: Number, required: true },
     user_remarks: { type: String, required: false },
     admin_remarks: { type: String, required: false },
-    vendor_remarks: { type: String, required: false },
+    seller_remarks: { type: String, required: false },
   },{ timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 

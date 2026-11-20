@@ -7,9 +7,9 @@ export interface OrderSkuDoc extends Document<Types.ObjectId> {
   seller_id: string | Types.ObjectId;
   quantity: number;
   price: number;
-  vendor_discount?: number;
+  admin_discount?: number;
+  seller_discount?: number;
   flavor_id?: string | Types.ObjectId;
-  tax_id?: string | Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,14 +21,10 @@ const orderSkuSchema = new Schema<OrderSkuDoc>({
     seller_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     quantity: { type: Number, required: true },
     price: { type: Number, required: true },
-    vendor_discount: { type: Number, required: false },
+    admin_discount: { type: Number, required: false },
+    seller_discount: { type: Number, required: false },
     flavor_id: { type: Schema.Types.ObjectId, ref: 'ProductFeature' },
-    tax_id: { type: Schema.Types.ObjectId, ref: 'Tax' },
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
-
-orderSkuSchema.virtual('product', { ref: 'Product', localField: 'product_id', foreignField: '_id', justOne: true, });
-orderSkuSchema.virtual('vendor', { ref: 'User', localField: 'seller_id', foreignField: '_id', justOne: true, });
-orderSkuSchema.virtual('sku', { ref: 'Sku', localField: 'sku_id', foreignField: '_id', justOne: true, });
 
 export default mongoose.models.OrderSku || mongoose.model<OrderSkuDoc>("OrderSku", orderSkuSchema);

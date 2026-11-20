@@ -24,8 +24,8 @@ export default function CartCharges({ cart, cart_status = true }: CartChargesPro
   const payableAmount = parseVal(data?.payable_amount ?? data?.paid); 
   const charges = data?.cartCharges ?? data?.orderCharges;
   const coupon = data?.cartCoupon;
-  const totalCouponDiscount = parseVal(coupon?.admin_coupon_discount) + parseVal(coupon?.vendor_coupon_discount);
-  const totalAdditionalDiscount = parseVal(charges?.admin_discount) + parseVal(charges?.total_vendor_discount);
+  const totalCouponDiscount = parseVal(coupon?.admin_coupon_discount) + parseVal(coupon?.seller_coupon_discount);
+  const totalAdditionalDiscount = parseVal(charges?.admin_discount) + parseVal(charges?.total_seller_discount);
 
   return (
     <>

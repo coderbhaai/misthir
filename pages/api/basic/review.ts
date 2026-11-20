@@ -101,7 +101,7 @@ export async function getReviews({ module, moduleId }: { module: string; moduleI
 export const functions: APIHandlers = {
   create_update_review: {
     middlewares: [],
-    // "authRequired", "roleOwnerVendorStaff", "canCreateOrUpdateReview"
+    // "authRequired", "roleOwnerSellerStaff", "canCreateOrUpdateReview"
   },
   get_filtered_reviews: {
     middlewares: [],

@@ -7,7 +7,7 @@ import MetaInput from "@amitkk/components/admin/meta-input";
 import MultiSelectDropdown from "@amitkk/components/admin/multiselect-dropdown";
 import { apiRequest, clo, handleMultiSelectChange, hitToastr } from "@amitkk/basic/utils/my-utils/admin-utils";
 import { SingleProductItemProps } from "@amitkk/product/types";
-import { useVendorId } from "hooks/useVendorId";
+import { useSellerId } from "hooks/useSellerId";
 import StatusSelect from "@amitkk/components/admin/status-input";
 import SkuModal from "@amitkk/product/admin/SkuModal";
 import GenericSelect from "@amitkk/components/admin/generic-select";
@@ -38,7 +38,7 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
   const { can } = useAuth();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const seller_id = useVendorId();
+    const seller_id = useSellerId();
     const mediaPanelRef = useRef<MediaPanelHandle>(null);
     
     const [formData, setFormData] = React.useState<DataProps>({
