@@ -3,6 +3,7 @@ import { TextField } from "@amitkk/components/basic/TextField";
 import { Button } from "@amitkk/components/button/button";
 import CustomModal from "@amitkk/basic/static/CustomModal";
 import { apiRequest, clo, hitToastr } from "@amitkk/basic/utils/my-utils/admin-utils";
+import OpenSelect from "@amitkk/components/basic/OpenSelect";
 
 type Props = {
   open: boolean;
@@ -44,6 +45,10 @@ export default function SellerDiscountModal({ open, handleClose, cartSku, limit,
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleUnitChange = (val: "hours" | "days") => {
+  setFormData((prev) => ({ ...prev, seller_discount_unit: val }));
+};
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (Number(formData.seller_discount) > limit) { hitToastr("error", `Discount cannot exceed ₹${limit}`); return; }
@@ -61,7 +66,7 @@ export default function SellerDiscountModal({ open, handleClose, cartSku, limit,
         }
       };
 
-      await apiRequest("POST", ecom/ecom", payload);
+      const res = await apiRequest("POST", "ecom/ecom", payload);
       if (res?.status) {
         refreshCart();
         handleClose();
@@ -75,10 +80,7 @@ export default function SellerDiscountModal({ open, handleClose, cartSku, limit,
           <TextField label={`Discount (Limit - ${limit})`} type="number" value={formData.seller_discount} name="seller_discount" onChange={handleChange} required/>
           <div className="flex gap-2">
             <TextField label="Validity" type="number" value={formData.seller_discount_validity_value} name="seller_discount_validity_value" onChange={handleChange} required/>
-            <TextField select label="Unit" value={formData.seller_discount_unit} name="seller_discount_unit" onChange={handleChange} required>
-              <MenuItem value="hours">Hours</MenuItem>
-              <MenuItem value="days">Days</MenuItem>
-            </TextField>
+            <OpenSelect name="seller_discount_unit" label="Unit" value={formData.seller_discount_unit} onChange={handleUnitChange} options={[ { label: "Hours", value: "hours" }, { label: "Days", value: "days" } ]}/>
           </div>
           <Button type="submit" color="primary">Save Discount</Button>
       </form>

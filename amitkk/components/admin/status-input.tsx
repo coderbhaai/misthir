@@ -9,31 +9,9 @@ interface DataProps {
   error?: boolean;
 }
 
-const StatusSelect: React.FC<DataProps> = ({
-  value,
-  onChange,
-  error,
-}) => {
+const StatusSelect: React.FC<DataProps> = ({ value, onChange, error }) => {
   return (
-    <OpenSelect
-      name="status"
-      label="Status"
-      value={value ?? ""}
-      error={error}
-      onChange={(value) =>
-        onChange(value as boolean)
-      }
-      options={[
-        {
-          label: "Active",
-          value: true,
-        },
-        {
-          label: "Not Active",
-          value: false,
-        },
-      ]}
-    />
+    <OpenSelect name="status" label="Status" value={value ?? ""} error={error} onChange={(value) => onChange(value as boolean)} options={[ { label: "Active", value: true }, { label: "Not Active", value: false } ]}/>
   );
 };
 

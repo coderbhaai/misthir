@@ -48,7 +48,7 @@ export const SingleAbandoneCart: React.FC<DataFormProps> = ({ dataId = "" }) => 
       <div className="col-span-12 md:col-span-7">
         <h2 className="text-2xl font-bold tracking-tight">Contact</h2>
 
-        <ContactInfoSection email={cart?.cartConsent?.email} phone={cart?.cartConsent?.phone} emailConsent={cart?.cartConsent?.emailConsent} phoneConsent={cart?.cartConsent?.phoneConsent} editable={false} />
+        <ContactInfoSection email={cart?.cartConsent?.email} phone={cart?.cartConsent?.phone} emailConsent={cart?.cartConsent?.emailConsent} phoneConsent={cart?.cartConsent?.phoneConsent} editable={false}/>
         { cart?.shipping_address_id && ( <p className="my-3"><strong>Shipping Address</strong> : {fullAddress(cart?.shipping_address_id as AddressProps)}</p>)}
         { cart?.billing_address_id && ( <p className="my-3"><strong>Billing Address</strong> : {fullAddress(cart?.billing_address_id as AddressProps)}</p>)}
 
@@ -61,7 +61,6 @@ export const SingleAbandoneCart: React.FC<DataFormProps> = ({ dataId = "" }) => 
           </div>
         </div>
       </div>
-
 
       <div className="col-span-12 md:col-span-5">
         <div className="rounded-2xl p-4 sticky top-5 space-y-4">
