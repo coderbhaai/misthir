@@ -88,11 +88,7 @@ export default function MenuLink({ collapsed = false }: { collapsed?: boolean })
         <div key={item._id} className="px-2">
           {hasChildren ? (
             <>
-              <button
-                onClick={() => toggleMenu(item._id)}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left"
-                style={{ paddingLeft }}
-              >
+              <button onClick={() => toggleMenu(item._id)} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left" style={{ paddingLeft }}>
                 <div className="flex items-center gap-2">{renderMenuContent(item)}</div>
                 {!collapsed && <span>{isOpen ? "-" : "+"}</span>}
               </button>
@@ -100,11 +96,7 @@ export default function MenuLink({ collapsed = false }: { collapsed?: boolean })
               {isOpen && <div className="mt-1">{renderItems(item.children, depth + 1)}</div>}
             </>
           ) : (
-            <Link
-              href={item.url || "#"}
-              className="flex items-center gap-2 rounded-lg px-3 py-2"
-              style={{ paddingLeft }}
-            >
+            <Link href={item.url || "#"} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ paddingLeft }}>
               {renderMenuContent(item)}
             </Link>
           )}
@@ -115,29 +107,23 @@ export default function MenuLink({ collapsed = false }: { collapsed?: boolean })
 
   return (
     <div className="space-y-1">
-      {/* Admin Links */}
       {renderItems(menu)}
 
-      {/* Divider or separation if needed */}
-      {userLinks.length > 0 && <hr className="my-2 border-white/10" />}
+      {/* {sellerLinks.length > 0 && <hr className="my-2 border-white/10" />}
 
-      {/* User Submenus (Flattened children only, skipping parent wrapper) */}
-      {userLinks.map((item) => (
-        <div key={item._id} className="px-2">
-          <Link href={item.url || "#"} className="flex items-center gap-2 rounded-lg px-3 py-2">
-            {renderMenuContent(item)}
-          </Link>
-        </div>
-      ))}
-
-      {sellerLinks.length > 0 && <hr className="my-2 border-white/10" />}
-
-      {/* Seller Submenus (Flattened children only, skipping parent wrapper) */}
       {sellerLinks.map((item) => (
         <div key={item._id} className="px-2">
           <Link href={item.url || "#"} className="flex items-center gap-2 rounded-lg px-3 py-2">
             {renderMenuContent(item)}
           </Link>
+        </div>
+      ))} */}
+
+      {userLinks.length > 0 && <hr className="my-2 border-white/10" />}
+
+      {userLinks.map((item) => (
+        <div key={item._id} className="px-2">
+          <Link href={item.url || "#"} className="flex items-center gap-2 rounded-lg px-3 py-2">{renderMenuContent(item)}</Link>
         </div>
       ))}
     </div>

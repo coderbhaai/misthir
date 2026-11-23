@@ -5,7 +5,7 @@ import { apiRequest, clo, hitToastr, isValidEmail } from "@amitkk/basic/utils/my
 import { useAuth } from "contexts/AuthContext";
 import CartList from "@amitkk/ecom/static/CartList";
 import AddressSelectionDropdown from "@amitkk/address/static/AddressSelectionDropdown";
-import SuggestProducts from "@amitkk/product/static/suggest-products";
+import SuggestProducts from "@amitkk/ecom/static/suggest-products";
 import BlankCart from "@amitkk/ecom/static/BlankCart";
 import router from "next/router";
 import { useEcom } from "contexts/EcomContext";

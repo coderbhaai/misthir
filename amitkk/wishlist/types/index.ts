@@ -1,5 +1,5 @@
 import { UserProps } from "@amitkk/basic/types/user";
-import { SingleProductItemProps, SkuProps } from "@amitkk/product/types";
+import { SingleProductItemProps, SkuProps } from "@amitkk/ecom/types/product";
 
 export interface WishlistProps {
   _id: string;

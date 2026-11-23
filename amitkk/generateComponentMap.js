@@ -4,10 +4,14 @@ const path = require("path");
 const root = path.resolve(__dirname);
 const outputPath = path.join(root, "componentMaps.ts");
 
-// Folders to completely ignore at the root level
-const EXCLUDE_FOLDERS = ["components", "lib"];
+const SKIP_TRAVERSE_FOLDERS = new Set(["node_modules", ".next", ".git", "components", "lib"]);
+const ADMIN_EXCLUDE_FOLDERS = new Set(["components", "lib", "seller", "user"]);
+const INTERNAL_MODULES = ["ecom", "blog", "basic"];
+const INTERNAL_SUBDIRS = ["pages", "regional"];
 
-function normalize(p) { return p.replace(/\\/g, "/"); }
+function normalize(p) {
+  return p.replace(/\\/g, "/");
+}
 
 function validateMap(map, mapName) {
   Object.entries(map).forEach(([key, value]) => {
@@ -18,8 +22,7 @@ function validateMap(map, mapName) {
   });
 }
 
-// Collect .ts/.tsx files immediately inside a given folder
-function collectImmediateFiles(folderPath, baseRoot) {
+function collectImmediateFiles(folderPath, baseRoot, extraProps = {}) {
   const result = {};
   if (!fs.existsSync(folderPath)) return result;
 
@@ -31,67 +34,50 @@ function collectImmediateFiles(folderPath, baseRoot) {
       const rel = normalize(
         path.relative(baseRoot, path.join(folderPath, entry.name)).replace(/\.(ts|tsx)$/, "")
       );
-      result[key] = { path: `./${rel}`, translate: true };
+      result[key] = { path: `./${rel}`, translate: true, ...extraProps };
     }
   }
   return result;
 }
 
-// Recursively find all directories matching a specific name (e.g., "seller" or "user")
-function findAllMatchingDirs(dir, targetName, results = []) {
-  if (!fs.existsSync(dir)) return results;
-  
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.isDirectory()) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.name === targetName) {
-        results.push(fullPath);
-      }
-      findAllMatchingDirs(fullPath, targetName, results);
-    }
-  }
-  return results;
-}
-
-// 1. Admin / General top-level files (files directly inside root subfolders like basic, address, audit, etc.)
 function getAdminFiles() {
   const result = {};
   const entries = fs.readdirSync(root, { withFileTypes: true });
 
   for (const entry of entries) {
-    if (
-      entry.isDirectory() && 
-      !EXCLUDE_FOLDERS.includes(entry.name) && 
-      entry.name !== "seller" && 
-      entry.name !== "user"
-    ) {
+    if (entry.isDirectory() && !ADMIN_EXCLUDE_FOLDERS.has(entry.name)) {
       const folderPath = path.join(root, entry.name);
-      // Collect files directly inside this folder (e.g., amitkk/basic/*.tsx, amitkk/address/*.tsx)
       Object.assign(result, collectImmediateFiles(folderPath, root));
     }
   }
   return result;
 }
 
-// 2. Role maps for all "seller" folders found recursively anywhere in the project
-function getRoleMap(roleName) {
+function collectNestedRoleMap(roleFolderName, routePrefix) {
   const result = {};
-  const matchingDirs = findAllMatchingDirs(root, roleName);
 
-  for (const dir of matchingDirs) {
-    const files = collectImmediateFiles(dir, root);
-    Object.assign(result, files);
+  function walk(currentDir) {
+    if (!fs.existsSync(currentDir)) return;
+    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || SKIP_TRAVERSE_FOLDERS.has(entry.name)) continue;
+
+      const fullPath = path.join(currentDir, entry.name);
+      if (entry.name === roleFolderName) {
+        Object.assign(result, collectImmediateFiles(fullPath, root, { route: routePrefix }));
+      }
+
+      walk(fullPath);
+    }
   }
 
+  walk(root);
   return result;
 }
 
-// Optional: Internal specialized map if you still need portfolio/blog nested pages/regional structure
 function collectInternalMap() {
   const componentMap = {};
-  const INTERNAL_MODULES = ["basic", "blog", "ecom"];
-  const INTERNAL_SUBDIRS = ["pages", "regional"];
 
   for (const moduleName of INTERNAL_MODULES) {
     for (const sub of INTERNAL_SUBDIRS) {
@@ -99,6 +85,7 @@ function collectInternalMap() {
       if (!fs.existsSync(dir)) continue;
 
       const files = fs.readdirSync(dir);
+
       for (const file of files) {
         if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;
 
@@ -111,23 +98,31 @@ function collectInternalMap() {
       }
     }
   }
+
   return componentMap;
 }
 
-function formatLoaderMap(name, map) {
+function formatLoaderMap(name, map, includeRoute = false) {
   const entries = Object.entries(map)
-    .map(([k, v]) => `  "${k}": { loader: () => import("${v.path}"), translate: ${v.translate} },`)
+    .map(([k, v]) => {
+      const routePart = includeRoute && v.route ? `, route: "${v.route}"` : "";
+      return `  "${k}": { loader: () => import("${v.path}"), translate: ${v.translate}${routePart} },`;
+    })
     .join("\n");
 
-  return `export const ${name}: Record<string, { loader: () => Promise<any>; translate: boolean }> = {
+  const entryType = includeRoute
+    ? "{ loader: () => Promise<any>; translate: boolean; route: string }"
+    : "{ loader: () => Promise<any>; translate: boolean }";
+
+  return `export const ${name}: Record<string, ${entryType}> = {
 ${entries}
 };`;
 }
 
 try {
   const admin = getAdminFiles();
-  const seller = getRoleMap("seller");
-  const user = getRoleMap("user");
+  const seller = collectNestedRoleMap("seller", "/seller");
+  const user = collectNestedRoleMap("user", "/user");
   const internal = collectInternalMap();
 
   validateMap(admin, "adminComponentMap");
@@ -139,9 +134,9 @@ try {
 
 ${formatLoaderMap("adminComponentMap", admin)}
 
-${formatLoaderMap("sellerComponentMap", seller)}
+${formatLoaderMap("sellerComponentMap", seller, true)}
 
-${formatLoaderMap("userComponentMap", user)}
+${formatLoaderMap("userComponentMap", user, true)}
 
 ${formatLoaderMap("internalComponentMap", internal)}
 
@@ -154,7 +149,7 @@ export default {
 `;
 
   fs.writeFileSync(outputPath, output, "utf-8");
-  console.log("✅ componentMaps.ts successfully regenerated with all folder files.");
+  console.log("✅ componentMaps.ts successfully regenerated with seller/user routes and validation.");
 } catch (err) {
   console.error("❌ Generator failed:", err);
 }

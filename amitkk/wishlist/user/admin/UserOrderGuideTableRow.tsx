@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from '@amitkk/components/basic/table';
 import { OrderGuideProductsProps, OrderGuideProps } from "@amitkk/wishlist/types";
-import { SingleProductItemProps, SkuProps } from '@amitkk/product/types';
+import { SingleProductItemProps, SkuProps } from '@amitkk/ecom/types/product';
 import { Iconify, isPopulated } from "@amitkk/basic/utils/my-utils/admin-utils";
 import DateFormat from "@amitkk/components/admin/date-format";
 import Link from 'next/link';

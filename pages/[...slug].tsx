@@ -5,7 +5,7 @@ import componentMaps from "@amitkk/componentMaps";
 import { groupBlockContent, serverApiRequest } from "@amitkk/basic/utils/my-utils/client-utils";
 import SingleBlog from "@amitkk/blog/static/single-blog";
 import LeadButton from "@amitkk/basic/admin/lead/LeadButton";
-import SingleProductPage from "@amitkk/product/static/SingleProductPage";
+import SingleProductPage from "@amitkk/ecom/static/SingleProductPage";
 
 const MODULE_COMPONENT_MAP: Record<string, ComponentType<any>> = {};
 

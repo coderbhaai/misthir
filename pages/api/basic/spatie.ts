@@ -11,8 +11,7 @@ import { APIHandlers } from '../../../lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import bcrypt from "bcryptjs";
 import { AnyModel } from 'lib/models';
-import { checkPermissionLogic } from 'pages/api/basic/auth';
-import { getUserIdFromToken, getUsersWithRole } from 'lib/services/authService';
+import { checkPermissionLogic, getUserIdFromToken, getUsersWithRole } from 'lib/services/authService';
 import { getDuplicateKeyErrorMessage, logError } from 'lib/services/errorService';
 import { pivotEntry, safeParse } from 'lib/services/dataService';
 
@@ -37,7 +36,6 @@ interface IPopulatedUser {
     };
   }>;
 }
-
 
 export enum RoleName {
   OWNER = "Owner",

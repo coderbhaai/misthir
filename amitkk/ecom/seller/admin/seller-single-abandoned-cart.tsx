@@ -14,7 +14,7 @@ import ContactInfoSection from "@amitkk/ecom/static/ContactInfoSection";
 import { AddressProps } from "@amitkk/address/types";
 import SkuItemList from "@amitkk/ecom/static/SkuItemList";
 import CouponForm from "@amitkk/coupon/static/CouponForm";
-import { SkuProps } from "@amitkk/product/types";
+import { SkuProps } from "@amitkk/ecom/types/product";
 
 interface DataFormProps {
     dataId?: string;

@@ -2,7 +2,7 @@
 
 import FaqPanel from "@amitkk/basic/admin/faq/FaqPanel";
 import SuggestTestimonial from "@amitkk/basic/admin/testimonial/suggest-testimonial";
-import SuggestProducts from "@amitkk/product/static/suggest-products";
+import SuggestProducts from "@amitkk/ecom/static/suggest-products";
 import SuggestBlogs from "@amitkk/blog/static/suggest-blog";
 import { SinglePageProps } from "@amitkk/basic/types/page";
 import { RelatedContent } from "@amitkk/basic/types";

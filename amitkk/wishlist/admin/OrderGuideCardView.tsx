@@ -1,6 +1,6 @@
 import React from "react";
 import { OrderGuideProps, OrderGuideProductsProps } from "@amitkk/wishlist/types";
-import { SingleProductItemProps, SkuProps } from "@amitkk/product/types";
+import { SingleProductItemProps, SkuProps } from "@amitkk/ecom/types/product";
 import { isPopulated } from "@amitkk/basic/utils/my-utils/admin-utils";
 import DateFormat from "@amitkk/components/admin/date-format";
 import { Package, Calendar, Layers } from "lucide-react";

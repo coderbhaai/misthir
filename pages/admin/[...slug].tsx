@@ -34,10 +34,10 @@ const DynamicAdminPage: DynamicAdminPageType = () => {
         const fullPath = `/admin/${slugParts.join("/")}`;
         
         const allowed = await checkPermission(fullPath);
-        // if (!allowed) {
-        //   window.location.href = get404Url();
-        //   return;
-        // }
+        if (!allowed) {
+          window.location.href = get404Url();
+          return;
+        }
         
         if (baseSlug && adminComponentMap[baseSlug]) {
           const mapEntry = adminComponentMap[baseSlug];

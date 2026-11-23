@@ -8,6 +8,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { parse } from 'cookie';
 import { logError } from './errorService';
 import { PipelineStage } from "mongoose";
+import Menu from 'lib/models/spatie/Menu';
+import UserPermission from 'lib/models/spatie/UserPermission';
+import Otp, { IOtp } from 'lib/models/spatie/Otp';
 
 export function getClientIP(req: any): string {
   const forwarded = req.headers['x-forwarded-for'];
@@ -96,7 +99,7 @@ export async function createUserSession(req: any, user_id: Types.ObjectId, token
     });
 
     cleanupOldLoginLogs();
-  } catch (error) { await logError(error, { function: "login_via_email", payload: req.body }); }
+  } catch (error) { await logError(error, { function: "createUserSession", payload: req.body }); }
 }
 
 export async function generateAuthLoad(req: any, user_id: string | Types.ObjectId): Promise<string | null> {
@@ -249,4 +252,62 @@ export async function getUserModule(roleName?: string) {
 
     return await User.aggregate(pipeline).exec();
   } catch (error) { return await logError(error, { function: "getUserModule", payload: {roleName} }); }
+}
+
+export async function checkPermissionLogic(req: NextApiRequest, url?: string) {
+  try {
+    const user_id = await getUserIdFromToken(req);
+    if (!user_id) return { message: 'Checked Permissions - Auth Missing', data: false };
+
+    const finalUrl = url || (req.query.url as string);
+    if (!finalUrl) return { message: 'Checked Permissions - URL Missing', data: false };
+
+    if (finalUrl.includes('/user/')) {
+      return { message: 'Auto-allowed because of /user/', data: true };
+    }
+
+    const menu = await Menu.findOne({ url: finalUrl, status: true });
+    if (!menu) return { message: 'Checked Permissions - Menu Missing', data: false };
+    
+    const hasPermission = await UserPermission.findOne({
+      user_id: user_id,
+      permission_id: menu.permission_id,
+    });
+    
+    if (!hasPermission) { return { message: 'Permission Denied', data: false }; }
+
+    return { message: 'Permission To Enter', data: true };
+  } catch (error) { await logError(error, { function: "checkPermissionLogic", payload: req.body }); }
+}
+
+interface OtpPayload {
+  type: string;
+  email?: string;
+  phone?: string;
+  ttlMinutes?: number;
+  req: NextApiRequest;
+}
+
+export async function createOtp({ type, email, phone, ttlMinutes = 5, req }: OtpPayload): Promise<IOtp> {
+  const user_id = await getUserIdFromToken(req);
+  const otp = crypto.randomInt(100000, 999999).toString();
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
+
+  const deleteConditions: Record<string, any> = {};
+  if (email) deleteConditions.email = email;
+  if (phone) deleteConditions.phone = phone;
+  if (user_id) deleteConditions.user_id = user_id;
+
+  await Otp.deleteMany(deleteConditions);
+
+  const entry = await Otp.create({
+    type,
+    email,
+    phone,
+    otp,
+    expiresAt,
+    ...(await user_id && { user_id }),
+  });
+
+  return entry;
 }

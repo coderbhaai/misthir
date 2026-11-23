@@ -3,8 +3,8 @@ import { WishlistProps } from '@amitkk/wishlist/types';
 import Image from "next/image";
 import { isPopulated } from "@amitkk/basic/utils/my-utils/admin-utils";
 import DateFormat from "@amitkk/components/admin/date-format";
-import { SingleProductItemProps } from '@amitkk/product/types';
-import { SkuProps } from '@amitkk/product/types';
+import { SingleProductItemProps } from '@amitkk/ecom/types/product';
+import { SkuProps } from '@amitkk/ecom/types/product';
 
 type Props = {
   row: WishlistProps;

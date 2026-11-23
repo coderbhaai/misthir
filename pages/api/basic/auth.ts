@@ -11,9 +11,7 @@ import { Types } from "mongoose";
 import ResetPassword from "lib/models/spatie/ResetPassword";
 import { UserOtpMail } from "@amitkk/basic/mails/UserOtpMail";
 import Otp, { IOtp } from "lib/models/spatie/Otp";
-import crypto from 'crypto';
-import Menu from "lib/models/spatie/Menu";
-import { generateAuthLoad, getUserIdFromToken } from "lib/services/authService";
+import { createOtp, generateAuthLoad, getUserIdFromToken } from "lib/services/authService";
 import { pivotEntry } from "lib/services/dataService";
 import { logError } from "lib/services/errorService";
 
@@ -31,21 +29,30 @@ interface IRoleWithPermissions {
   name: string;
 }
 
+const normalizeEmail = (email?: unknown): string => typeof email === "string" ? email.trim().toLowerCase() : "";
+
 export async function login_via_email(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+
+    const {password } = req.body;
     if (!email || !password) { return res.status(400).json({ message: "Email and password are required", data: null }); }
 
-    const user = await User.findOne({ email });
-    if (!user) { return res.status(401).json({ message: "Invalid credentials", data: null }); }
+    const user = await User.findOne({ email }).select("password");
+    if (!user || !user.password) { return res.status(401).json({ message: "Invalid credentials", data: null }); }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(String(password), user.password);
     if (!isMatch) { return res.status(401).json({ message: "Invalid credentials", data: null }); }
 
     const data = await generateAuthLoad(req, user._id);
 
-    return res.status(200).json({ message: 'Welcome Aboard', data });
-  } catch (error) { await logError(error, { function: "login_via_email", payload: req.body }); }
+    return res.status(200).json({ message: "Welcome Aboard", data });
+  } catch (error) {
+    await logError(error, { function: "login_via_email", payload: req.body });
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Internal server error", data: null });
+    }
+  }
 }
 
 export async function generate_phone_otp(req: NextApiRequest, res: NextApiResponse) {
@@ -59,7 +66,7 @@ export async function generate_phone_otp(req: NextApiRequest, res: NextApiRespon
 }
 
 export async function generate_email_otp(req: NextApiRequest, res: NextApiResponse) {
-  const { email } = req.body;
+  const email = normalizeEmail(req.body.email);
   if (!email) { return res.status(400).json({ message: 'Email or phone required' }); }
 
   try {
@@ -108,7 +115,8 @@ export async function register_or_login_via_mobile(req: NextApiRequest, res: Nex
 
 export async function register_via_email(req: NextApiRequest, res: NextApiResponse) {  
   try {
-    const { name, email, phone, otp, password, confirm_password } = req.body; 
+    const email = normalizeEmail(req.body.email);
+    const { name, phone, otp, password, confirm_password } = req.body; 
     if ( !name || !email || !phone || !otp || !password || !confirm_password ) { return res.status(400).json({ message: 'All fields are required' }); }
     if( password !== confirm_password ){ return res.status(400).json({ message: 'Passwords Mismatch' }); }
     
@@ -189,11 +197,12 @@ export async function attachRoleAndPermissions(user_id: Types.ObjectId, role?: s
 
 export async function forgot_password(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
     if (!email) { return res.status(400).json({ message: 'Email or phone required' }); }
   
     const user = await User.findOne({ email })
     if (!user) { return res.status(400).json({ message: 'No User by this email found' }); }
+
     const otp = await createOtp({ type: "email", email, req });
     if( !otp ){ return res.status(400).json({ message: 'OTP Not Found' }); }
     
@@ -205,7 +214,7 @@ export async function forgot_password(req: NextApiRequest, res: NextApiResponse)
       otp: otpEntry?.otp,
     });
 
-    // await UserOtpMail( otp._id.toString() );
+    await UserOtpMail({ email, otp: otpEntry?.otp });
 
     return res.status(200).json({ message: 'OTP Generated Successfully', data:true });
   } catch (error) { await logError(error, { function: "forgot_password", payload: req.body }); }
@@ -213,7 +222,8 @@ export async function forgot_password(req: NextApiRequest, res: NextApiResponse)
 
 export async function reset_password(req: NextApiRequest, res: NextApiResponse) {  
   try {
-    const { email, otp, password, confirm_password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { otp, password, confirm_password } = req.body;
     if ( !email || !otp || !password || !confirm_password ) { return res.status(400).json({ message: 'Email and new password are  required' }); }
     if( password !== confirm_password ){ return res.status(400).json({ message: 'Passwords Mismatch' }); }
   
@@ -235,68 +245,6 @@ export async function reset_password(req: NextApiRequest, res: NextApiResponse) 
     return res.status(200).json({ message: 'Password reset successfully', data:true });
   } catch (error) { await logError(error, { function: "reset_password", payload: req.body }); }
 }
-
-// Functions
-  export async function checkPermissionLogic(req: NextApiRequest, url?: string) {
-    try {
-      const user_id = await getUserIdFromToken(req);
-      if (!user_id) return { message: 'Checked Permissions - Auth Missing', data: false };
-
-      const finalUrl = url || (req.query.url as string);
-      if (!finalUrl) return { message: 'Checked Permissions - URL Missing', data: false };
-
-      if (finalUrl.includes('/user/')) {
-        return { message: 'Auto-allowed because of /user/', data: true };
-      }
-
-      const menu = await Menu.findOne({ url: finalUrl, status: true });
-      if (!menu) return { message: 'Checked Permissions - Menu Missing', data: false };
-      
-      const hasPermission = await UserPermission.findOne({
-        user_id: user_id,
-        permission_id: menu.permission_id,
-      });
-      
-      if (!hasPermission) {
-        return { message: 'Permission Denied', data: false };
-      }
-
-      return { message: 'Permission To Enter', data: true };
-    } catch (error) { await logError(error, { function: "checkPermissionLogic", payload: req.body }); }
-  }
-
-  interface OtpPayload {
-    type: string;
-    email?: string;
-    phone?: string;
-    ttlMinutes?: number;
-    req: NextApiRequest;
-  }
-
-  export async function createOtp({ type, email, phone, ttlMinutes = 5, req }: OtpPayload): Promise<IOtp> {
-    const user_id = await getUserIdFromToken(req);
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
-
-    const deleteConditions: Record<string, any> = {};
-    if (email) deleteConditions.email = email;
-    if (phone) deleteConditions.phone = phone;
-    if (user_id) deleteConditions.user_id = user_id;
-
-    await Otp.deleteMany(deleteConditions);
-
-    const entry = await Otp.create({
-      type,
-      email,
-      phone,
-      otp,
-      expiresAt,
-      ...(await user_id && { user_id }),
-    });
-
-    return entry;
-  }
-// Functions
 
 export const functions: APIHandlers = {
   login_via_email : { middlewares: [ "checkPostMethod" ] },

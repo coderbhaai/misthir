@@ -3,7 +3,7 @@ import { WishlistProps } from '@amitkk/wishlist/types';
 import Image from "next/image";
 import { isPopulated } from "@amitkk/basic/utils/my-utils/admin-utils";
 import DateFormat from "@amitkk/components/admin/date-format";
-import { SingleProductItemProps, SkuProps } from '@amitkk/product/types';
+import { SingleProductItemProps, SkuProps } from '@amitkk/ecom/types/product';
 import { Package, Calendar } from "lucide-react";
 
 type Props = {

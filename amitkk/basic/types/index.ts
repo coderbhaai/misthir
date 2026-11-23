@@ -5,7 +5,7 @@ import type { GenericModule } from "./generic";
 import type { UserProps } from "./user";
 import type { SinglePageProps } from "./page";
 import { BlockDetailProps, GenericBlock } from "./blocks";
-import { SingleProductItemProps } from "@amitkk/product/types";
+import { SingleProductItemProps } from "@amitkk/ecom/types/product";
 
 export interface RelatedContent {
   faq: FaqProps[];

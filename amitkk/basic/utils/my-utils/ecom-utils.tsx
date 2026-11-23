@@ -1,4 +1,4 @@
-import { ProductFeatureProps, SkuProductFeatureRelationItem } from "@amitkk/product/types";
+import { ProductFeatureProps, SkuProductFeatureRelationItem } from "@amitkk/ecom/types/product";
 
 export function extractFeatureValues<K extends keyof ProductFeatureProps>(
   inputArray: (SkuProductFeatureRelationItem | ProductFeatureProps | string)[] | undefined | null, 

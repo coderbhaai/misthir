@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type {DataProps} from '@amitkk/product/admin/admin-product-brand-table';
+import type {DataProps} from '@amitkk/ecom/admin/product/admin-product-brand-table';
 import { useState } from 'react';
 import ImageUpload from '@amitkk/components/admin/file-input';
 import MediaImage from '@amitkk/components/admin/table-image';

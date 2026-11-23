@@ -37,12 +37,13 @@ const DynamicSellerPage: React.FC & { delayLayoutRender?: boolean } = () => {
          window.location.href = get404Url();
           return;
         }
-        
+
         if (baseSlug && sellerComponentMap[baseSlug]) {
-          const PageComponent = await sellerComponentMap[baseSlug]();
-          setComponent(() => PageComponent.default);
+          const mapEntry = sellerComponentMap[baseSlug];
+          const PageComponent = await mapEntry.loader();
+          setComponent(() => PageComponent.default || PageComponent);
         } else {
-          throw new Error(`Unknown seller base slug: ${baseSlug}`);
+          throw new Error(`Unknown base slug: ${baseSlug}`);
         }
       } catch (error) {
         clo(error);

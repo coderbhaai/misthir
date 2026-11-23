@@ -1,7 +1,7 @@
 import { AddressProps, CityProps, CountryProps, StateProps } from "@amitkk/address/types";
 import { UserProps, UserRowProps } from "@amitkk/basic/types/user";
 import { CouponProps } from "@amitkk/coupon/types";
-import { SingleProductItemProps, SkuProps } from "@amitkk/product/types";
+import { SingleProductItemProps, SkuProps } from "@amitkk/ecom/types/product";
 
 export type SkuItem = CartSkuProps | OrderSkuProps;
 export type ChargesItem = CartChargesProps | OrderChargesProps;

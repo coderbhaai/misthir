@@ -4,7 +4,7 @@ import { apiRequest, clo, hitToastr } from "@amitkk/basic/utils/my-utils/admin-u
 import { getProp, resolvePopulated } from "@amitkk/basic/utils/my-utils/shared-utils";
 import { Input } from "@amitkk/components/basic/input";
 import { Search, Plus, Check, Loader2, X, Minus } from "lucide-react";
-import { SingleProductItemProps } from "@amitkk/product/types";
+import { SingleProductItemProps } from "@amitkk/ecom/types/product";
 import ResponsiveImage from "@amitkk/components/ui/ResponsiveImage";
 
 interface OrderGuideProductModalProps { 

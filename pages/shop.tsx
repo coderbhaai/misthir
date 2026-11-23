@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest, clo } from "@amitkk/basic/utils/my-utils/admin-utils";
-import { SidebarShop } from "@amitkk/product/static/sidebar-shop";
-import { SingleProductItem } from "@amitkk/product/static/single-product-item";
+import { SidebarShop } from "@amitkk/ecom/static/sidebar-shop";
+import { SingleProductItem } from "@amitkk/ecom/static/single-product-item";
 import CustomModal from "@amitkk/basic/static/CustomModal";
-import { HorizontalSidebarShop } from "@amitkk/product/static/horizontal-sidebar-shop";
+import { HorizontalSidebarShop } from "@amitkk/ecom/static/horizontal-sidebar-shop";
 import { useMediaQuery } from "hooks/use-media-query";
-import { SingleProductItemProps } from "@amitkk/product/types";
+import { SingleProductItemProps } from "@amitkk/ecom/types/product";
 import { ArrayProps } from "@amitkk/basic/types";
 
 interface SidebarData {

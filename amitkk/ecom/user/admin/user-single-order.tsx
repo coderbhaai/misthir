@@ -5,7 +5,7 @@ import { apiRequest, clo } from "@amitkk/basic/utils/my-utils/admin-utils";
 import { OrderProps } from '@amitkk/ecom/types';
 import { fullAddress, getMaskedAddress } from "@amitkk/address/utils/addressUtils";
 import SuggestBlogs from "@amitkk/blog/static/suggest-blog";
-import SuggestProducts from "@amitkk/product/static/suggest-products";
+import SuggestProducts from "@amitkk/ecom/static/suggest-products";
 import { generateInvoice } from "@amitkk/payment/utils/utils";
 import { Button } from "@amitkk/components/button/button";
 import { AddressProps } from "@amitkk/address/types";

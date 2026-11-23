@@ -1,5 +1,5 @@
 import React from "react";
-import { SingleProductItemProps, SkuProps } from "@amitkk/product/types";
+import { SingleProductItemProps, SkuProps } from "@amitkk/ecom/types/product";
 import { SkuItem } from "../types";
 
 interface CartSkuDetailsProps {

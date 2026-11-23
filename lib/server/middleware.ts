@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { setRequestContext } from "lib/server/requestContext";
 import { validateSyncRequest } from "lib/utils/syncAuth";
-import { checkPermissionLogic } from "pages/api/basic/auth";
-import { authMiddleware, getUserIdFromToken } from "lib/services/authService";
+import { authMiddleware, checkPermissionLogic, getUserIdFromToken } from "lib/services/authService";
 
 export interface MiddlewareConfig {
   name: string;

@@ -4,7 +4,7 @@ import { AdminTableLayout } from "@amitkk/basic/utils/layouts/AdminTableLayout";
 import { useAdminPage } from "hooks/useAdminPage";
 import DataModal from "@amitkk/ecom/seller/admin/seller-brand-modal";
 import { AdminDataTable } from "@amitkk/ecom/seller/admin/seller-product-brand-table";
-import { DataProps } from "@amitkk/product/admin/admin-product-brand-table";
+import { DataProps } from "@amitkk/ecom/admin/product/admin-product-brand-table";
 
 export  function AdminProductBrand(){
     const admin =   useAdminPage<DataProps>({ listEndpoint: "product/basic", listFunction: "get_filtered_product_brands", singleFunction: "get_single_product_brand" });

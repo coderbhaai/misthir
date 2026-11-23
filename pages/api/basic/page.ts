@@ -89,9 +89,7 @@ export async function status_switch(req: NextApiRequest, res: NextApiResponse) {
 
       if (data._id) {
         const moduleId = data.module === 'Page' ? data._id : data.module_id;
-
-        console.log("moduleId",moduleId)
-
+        
         const updated = await Page.findByIdAndUpdate(data._id, {
             media_id,
             meta_id,

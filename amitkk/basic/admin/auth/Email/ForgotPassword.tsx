@@ -38,8 +38,8 @@ export default function ForgotPassword({ handleClose, onUpdate }: AuthProps) {
           email: '',
         });
 
-        hitToastr('success', res.message);
       }
+      hitToastr('success', res.message);
 
     } catch (error) { clo( error ); }
   };

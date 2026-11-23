@@ -31,8 +31,8 @@ export default function LoginForm({ role="User", handleClose, attachUser= false,
       if( res?.data ){
         login(res?.data);
         handleClose();
-        hitToastr('success', res.message);
       }
+      hitToastr('success', res.message);
     } catch (error) { clo( error ); }
   };
 

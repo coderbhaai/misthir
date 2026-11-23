@@ -1,4 +1,4 @@
-import AdminSellerCommission from "@amitkk/product/seller-commission";
+import AdminSellerCommission from "@amitkk/ecom/seller-commission";
 import { useRouter } from "next/router";
 
 export default function AddUpdateCommission() {

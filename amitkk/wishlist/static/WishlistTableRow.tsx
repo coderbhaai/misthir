@@ -5,8 +5,8 @@ import { isPopulated } from "@amitkk/basic/utils/my-utils/admin-utils";
 import UserRow from "@amitkk/basic/static/UserRow";
 import { UserRowProps } from "@amitkk/basic/types/user";
 import DateFormat from "@amitkk/components/admin/date-format";
-import { SingleProductItemProps } from '@amitkk/product/types';
-import { SkuProps } from '@amitkk/product/types';
+import { SingleProductItemProps } from '@amitkk/ecom/types/product';
+import { SkuProps } from '@amitkk/ecom/types/product';
 
 type Props = {
   row: WishlistProps;

@@ -5,7 +5,7 @@ import { isPopulated } from "@amitkk/basic/utils/my-utils/admin-utils";
 import UserRow from "@amitkk/basic/static/UserRow";
 import { UserRowProps } from "@amitkk/basic/types/user";
 import DateFormat from "@amitkk/components/admin/date-format";
-import { SingleProductItemProps, SkuProps } from '@amitkk/product/types';
+import { SingleProductItemProps, SkuProps } from '@amitkk/ecom/types/product';
 import { Package, Calendar, MessageSquare, ShieldAlert } from "lucide-react";
 
 type Props = {

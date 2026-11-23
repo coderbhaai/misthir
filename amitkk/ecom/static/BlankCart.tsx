@@ -1,6 +1,6 @@
 import { PageDetailProps } from '@amitkk/basic/types/page';
-import SuggestProducts from '@amitkk/product/static/suggest-products';
-import { SingleProductItemProps } from '@amitkk/product/types';
+import SuggestProducts from '@amitkk/ecom/static/suggest-products';
+import { SingleProductItemProps } from '@amitkk/ecom/types/product';
 import Link from 'next/link';
 import React from 'react';
 

@@ -8,7 +8,7 @@ import Image from "next/image";
 import type { RelatedContent } from "@amitkk/basic/types";
 import type { BlogMetaProps, SingleBlogProps } from "@amitkk/basic/types/shared";
 import DateTimeFormat from "@amitkk/components/admin/date-format";
-import SuggestProducts from "@amitkk/product/static/suggest-products";
+import SuggestProducts from "@amitkk/ecom/static/suggest-products";
 
 interface BlogPayloadProps extends Omit<SingleBlogProps, "metas"> {
   blogs?: SingleBlogProps[];

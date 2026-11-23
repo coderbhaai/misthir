@@ -6,10 +6,10 @@ import dynamic from "next/dynamic";
 import MetaInput from "@amitkk/components/admin/meta-input";
 import MultiSelectDropdown from "@amitkk/components/admin/multiselect-dropdown";
 import { apiRequest, clo, handleMultiSelectChange, hitToastr } from "@amitkk/basic/utils/my-utils/admin-utils";
-import { SingleProductItemProps } from "@amitkk/product/types";
+import { SingleProductItemProps } from "@amitkk/ecom/types/product";
 import { useSellerId } from "hooks/useSellerId";
 import StatusSelect from "@amitkk/components/admin/status-input";
-import SkuModal from "@amitkk/product/admin/SkuModal";
+import SkuModal from "@amitkk/ecom/admin/product/SkuModal";
 import GenericSelect from "@amitkk/components/admin/generic-select";
 import { useFormHandler } from "hooks/useFormHandler";
 import { TextField } from "@amitkk/components/basic/TextField";
@@ -19,7 +19,7 @@ import MediaPanel, { MediaPanelHandle } from "@amitkk/basic/admin/media/media-pa
 import { SubmitButton } from "@amitkk/components/button/LoadingSubmit";
 import { useAuth } from "contexts/AuthContext";
 import SingleUserDropdown from "@amitkk/basic/admin/spatie/SingleUserDropdown";
-import SkuCardList from "@amitkk/product/static/SkuCardList";
+import SkuCardList from "@amitkk/ecom/static/SkuCardList";
 
 const CkEditor = dynamic(() => import("@amitkk/components/admin/ckeditor-input"), { 
   ssr: false, loading: () => <p>Loading editor...</p>,
