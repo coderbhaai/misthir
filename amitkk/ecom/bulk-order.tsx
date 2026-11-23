@@ -6,7 +6,7 @@ import { AdminDataTable, DataProps } from "@amitkk/ecom/admin/admin-bulk-order-t
 import DataModal from "@amitkk/ecom/admin/bulk-order-update-modal";
 
 export function AdminBulkOrders() {
-    const admin = useAdminPage<DataProps>({ listEndpoint: "product/product", listFunction: "get_all_bulk_orders", singleFunction: "get_single_bulk_order" });  
+    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/bulkOrder", listFunction: "get_filtered_bulk_orders", singleFunction: "get_single_bulk_order" });  
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },

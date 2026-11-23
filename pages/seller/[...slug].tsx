@@ -61,13 +61,9 @@ const DynamicSellerPage: React.FC & { delayLayoutRender?: boolean } = () => {
   if (!Component) return <h1>Page Not Found</h1>;
 
   return (
-      <Component
-        module={Array.isArray(slug) && slug[1] ? slug[1] : ""}
-        module_id={Array.isArray(slug) && slug[2] ? slug[2] : ""}
-      />
+      <Component module={Array.isArray(slug) && slug[1] ? slug[1] : ""} module_id={Array.isArray(slug) && slug[2] ? slug[2] : ""}/>
   );
 };
 
 DynamicSellerPage.delayLayoutRender = true;
-
 export default DynamicSellerPage;

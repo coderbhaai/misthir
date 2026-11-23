@@ -12,12 +12,11 @@ import Product from 'lib/models/product/Product';
 import AuditLog from 'lib/models/basic/AuditLog';
 import Cta from 'lib/models/basic/Cta';
 import CtaCounter from 'lib/models/basic/CtaCounter';
-import { clearDebugFile } from '../debug';
 import { get_single_blog_by_url } from '../blog/blogs';
-import { get_single_product_by_url } from '../product/product';
+import { get_single_product_by_url } from '../ecom/product';
 import { get_page_by_url } from './page';
 import ErrorLog from 'lib/models/basic/ErrorLog';
-import { logError } from 'lib/services/errorService';
+import { clearDebugFile, logError } from 'lib/services/errorService';
 import Client from 'lib/models/basic/Client';
 import { getSitemapData } from 'lib/services/seoService';
 

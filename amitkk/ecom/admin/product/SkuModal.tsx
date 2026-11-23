@@ -65,7 +65,7 @@ export default function SkuModal({ open, handleCloseModal, onSave, initialData }
     const fetchSkuOptions = async () => {
       setLoading(true);
       try {
-        const res = await apiRequest("GET", "product/product?function=get_sku_modules");
+        const res = await apiRequest("GET", "ecom/product?function=get_sku_modules");
         if (res?.data) {
           setOptions(res.data);
         }

@@ -82,37 +82,36 @@ export const BlogForm: React.FC<DataFormProps> = ({ dataId = '' }) => {
             const fetchSingleEntry = async () => {
                 try {
                     const res = await apiRequest("GET", `blog/blogs?function=get_single_blog&id=${dataId}`);
-                    
-                    if (res?.data) {
-                        const metas = res?.data.metas || [];
+                    if ( !res?.data ) { router.push('/404'); }                    
 
-                        // const categories = metas.filter((m: any) => m.blogmeta_id?.type === 'category')?.map((m: any) => m.blogmeta_id);
-                        // const tags = metas.filter((m: any) => m.blogmeta_id?.type === 'tag')?.map((m: any) => m.blogmeta_id);
+                    const metas = res?.data.metas || [];
 
-                        // const categoryIds = categories?.map((i: any) => i._id);
-                        // const categoryNames = categories?.map((i: any) => i.name);
+                    // const categories = metas.filter((m: any) => m.blogmeta_id?.type === 'category')?.map((m: any) => m.blogmeta_id);
+                    // const tags = metas.filter((m: any) => m.blogmeta_id?.type === 'tag')?.map((m: any) => m.blogmeta_id);
 
-                        // const tagIds = tags?.map((i: any) => i._id);
-                        // const tagNames = tags?.map((i: any) => i.name);
+                    // const categoryIds = categories?.map((i: any) => i._id);
+                    // const categoryNames = categories?.map((i: any) => i.name);
 
-                        setFormData({
-                            name: res?.data.name,
-                            url: res?.data.url,
-                            media: res?.data.media_id,
-                            status: res?.data.status,
-                            media_id: res?.data.media_id?._id,
-                            author_id: res?.data.author_id?._id || '',
-                            content: res?.data.content,
-                            createdAt: res?.data.createdAt,
-                            updatedAt: res?.data.updatedAt,
-                            _id: res?.data.id,
-                            meta_id: res?.data.meta_id?._id || '',
-                            title: res?.data.meta_id?.title || '',
-                            description: res?.data.meta_id?.description || '',
-                        });
+                    // const tagIds = tags?.map((i: any) => i._id);
+                    // const tagNames = tags?.map((i: any) => i.name);
 
-                        setContent(res?.data.content);
-                    }
+                    setFormData({
+                        name: res?.data.name,
+                        url: res?.data.url,
+                        media: res?.data.media_id,
+                        status: res?.data.status,
+                        media_id: res?.data.media_id?._id,
+                        author_id: res?.data.author_id?._id || '',
+                        content: res?.data.content,
+                        createdAt: res?.data.createdAt,
+                        updatedAt: res?.data.updatedAt,
+                        _id: res?.data.id,
+                        meta_id: res?.data.meta_id?._id || '',
+                        title: res?.data.meta_id?.title || '',
+                        description: res?.data.meta_id?.description || '',
+                    });
+
+                    setContent(res?.data.content);
                 } catch (error) { clo( error ); }
             }
             fetchSingleEntry();
@@ -157,9 +156,11 @@ export const BlogForm: React.FC<DataFormProps> = ({ dataId = '' }) => {
     
     return(
         <>
-            <div className="py: 3">
-                <h1 className="text-xl font-bold">{title}</h1>
+            <div className="py-3 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">{dataId ? "Update Blog" : "Add Blog"}</h1>
+                <a href="/admin/add-update-blog" className="text-sm font-medium text-blue-600 hover:underline">Add New Blog</a>
             </div>
+
             <form onSubmit={handleSubmit} style={{ padding: "10px" }}>
                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                     <TextField label="Blog Name" value={formData.name} name="name" onChange={handleChange} required />

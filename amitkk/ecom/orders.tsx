@@ -8,6 +8,7 @@ import { useState } from "react";
 
 export function AdminOrders() {
     const admin =   useAdminPage<OrderProps>({ listEndpoint: "ecom/wishlist", listFunction: "get_filtered_wishlist" });
+    const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },
@@ -27,7 +28,7 @@ export function AdminOrders() {
     const exportProps = { open: openExport, handleClose: handleExportClose, type: "Admin Wishlist", change_type: false };
 
     return (
-        <AdminTableLayout admin={admin} title="Orders" viewMode="grid" showViewModeSwitch={true} filters={FILTER_CONFIG} head={head} 
+        <AdminTableLayout admin={admin} title="Orders" showViewToggle={true} viewMode={viewMode} onViewModeChange={setViewMode} filters={FILTER_CONFIG} head={head} 
             rows={admin.data.map((i: OrderProps) => ( <AdminDataTable key={String(i._id)} row={i}/> ))}>
         </AdminTableLayout>
     );

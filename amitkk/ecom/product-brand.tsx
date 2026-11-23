@@ -6,7 +6,7 @@ import DataModal from "@amitkk/ecom/admin/product/product-brand-modal";
 import { AdminDataTable, DataProps } from "@amitkk/ecom/admin/product/admin-product-brand-table";
 
 export  function AdminProductBrand(){
-    const admin =   useAdminPage<DataProps>({ listEndpoint: "product/basic", listFunction: "get_filtered_product_brands", singleFunction: "get_single_product_brand" });
+    const admin =   useAdminPage<DataProps>({ listEndpoint: "ecom/basic", listFunction: "get_filtered_product_brands", singleFunction: "get_single_product_brand" });
 
     const FILTER_CONFIG = [
         { name: "UserFilter", grid: "col-span-3", props: { role: ["Seller"] } },

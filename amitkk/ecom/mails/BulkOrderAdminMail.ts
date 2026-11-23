@@ -8,7 +8,7 @@ export async function BulkOrderAdminMail(data_id: string) {
     let data: OrderProps | null = null;
 
     try {
-        const res = await apiRequest("POST", `product/product`, { function: "get_single_bulk_order", data_id });
+        const res = await apiRequest("POST", `ecom/bulkOrder`, { function: "get_single_bulk_order", data_id });
         if ( !res?.data ) { throw new Error("Entry not found"); }
 
         data = res.data as OrderProps;

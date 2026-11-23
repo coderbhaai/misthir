@@ -11,24 +11,24 @@ import ProductProductFeature from 'lib/models/product/ProductProductFeature';
 import ProductIngridient from 'lib/models/product/ProductIngridient';
 import ProductProductBrand from 'lib/models/product/ProductProductBrand';
 import Sku from 'lib/models/product/Sku';
-import SkuProductFeature from 'lib/models/product/SkuProductFeature';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import Tax from 'lib/models/tax/Tax';
 import { getReviews } from '../basic/review';
-import BulkOrder from 'lib/models/ecom/BulkOrder';
-import { initAction } from "lib/services/actionService";
 import { APIHandlers } from 'lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
-import SkuDetail from 'lib/models/product/SkuDetail';
-import { getUserIdFromToken } from 'lib/services/authService';
 import { escapeRegExp, getRelatedContent, pivotEntry } from 'lib/services/dataService';
 import { syncMediaHub } from 'lib/services/mediaService';
 import { logError } from 'lib/services/errorService';
+import { getLinkedProductIds, getSellerIdFromToken, upsertSku } from 'lib/services/ecomService';
 
 export async function get_filtered_products(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { filters = {}, page = 0, limit = 10 } = req.body || {};
     const { matchQuery, skip, limit: safeLimit } = buildFilterQuery(filters, { page, limit, defaultLimit: 10, maxLimit: 100, searchableFields: ["name", "url"], ignoreKeys: ["search", "productType_id", "productBrand_id"] });
+
+    const { sellerId, error } = await getSellerIdFromToken(req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+    if (sellerId) { matchQuery.seller_id = new mongoose.Types.ObjectId(sellerId); }
     
     const search = filters.search?.trim();
     if (filters.productType_id) {
@@ -148,6 +148,10 @@ export async function get_single_product(req: NextApiRequest, res: NextApiRespon
     if (seller_id && mongoose.Types.ObjectId.isValid(seller_id as string)) {
       filter.seller_id = new mongoose.Types.ObjectId(seller_id as string);
     }
+
+    const { sellerId, error } = await getSellerIdFromToken(req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+    if (sellerId) { filter.seller_id = new mongoose.Types.ObjectId(sellerId); }
     
     const data = await Product.findOne(filter).populate([
       { path: "tax_id" }, { path: "seller_id" }, { path: "meta_id" },
@@ -166,7 +170,7 @@ export async function get_single_product(req: NextApiRequest, res: NextApiRespon
         { path: "colors", populate: { path: "productFeature_id", model: "ProductFeature" } }
       ]},
     ]).lean(false).exec();
-    if (!data) { return res.status(404).json({ message: `Product with ID ${id} not found` }); }
+    if (!data) { return res.status(200).json({ message: `Product with ID ${id} not found`, data: null }); }
 
     return res.status(200).json({ message: 'Fetched Single Product', data });
   } catch (error) { 
@@ -274,14 +278,21 @@ export async function get_product_modules(req: NextApiRequest, res: NextApiRespo
     const rawSellerId = req.query.seller_id as string;
     const hasValidSeller = rawSellerId && mongoose.Types.ObjectId.isValid(rawSellerId);
     const sellerObjectId = hasValidSeller ? new mongoose.Types.ObjectId(rawSellerId) : null;
-    const sellerFilter = sellerObjectId ? { $or: [{ seller_id: sellerObjectId }, { user_id: sellerObjectId }] } : {};
+
+    const { sellerId, error } = await getSellerIdFromToken(req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+
+    const brandFilter: Record<string, any> = { status: true };
+    if (sellerId) { brandFilter.seller_id = new mongoose.Types.ObjectId(sellerId); }
+
+    console.log("brandFilter", brandFilter)
 
     const [productBrand, category, tag, productTypes, ingridient, flavors, colors, eggless, glutten, sugar, storage, tax] = await Promise.all([
-      ProductBrand.find({...sellerFilter, status: true}).select("_id name").sort({ name: 1 }).lean(),
+      ProductBrand.find(brandFilter).select("_id name").sort({ name: 1 }).lean(),
       Productmeta.find({ status: true, module: "Category" }).select("_id name").sort({ name: 1 }).lean(),
       Productmeta.find({ status: true, module: "Tag" }).select("_id name").sort({ name: 1 }).lean(),
       Productmeta.find({ status: true, module: "Type" }).select("_id name").sort({ name: 1 }).lean(),
-      Ingridient.find(sellerFilter).select("_id name").sort({ name: 1 }).lean(),
+      Ingridient.find({ status: true }).select("_id name").sort({ name: 1 }).lean(),
       ProductFeature.find({ status: true, module: "Flavor" }).select("_id name").sort({ name: 1 }).lean(),
       ProductFeature.find({ status: true, module: "Color" }).select("_id name").sort({ name: 1 }).lean(),
       ProductFeature.find({ status: true, module: "Eggless" }).select("_id name").sort({ name: 1 }).lean(),
@@ -335,118 +346,6 @@ export async function get_product_module(req: NextApiRequest, res: NextApiRespon
 
     return res.status(200).json({ message: 'Fetched all Product Modules', data });
   } catch (error) { await logError(error, { function: "get_product_module", payload: req.body }); }
-}
-
-interface UpsertSkuInput {
-  _id?: string;
-  product_id: string | Types.ObjectId;
-  name: string;
-  item_code?: string;
-  unit?: string;
-  price_per_unit?: number;
-  price: number;
-  inventory: number;
-  status?: boolean;
-  displayOrder?: number;
-  adminApproval?: boolean;
-  eggless_id?: string;
-  sugarfree_id?: string;
-  gluttenfree_id?: string;
-  weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
-  preparationTime?: number;
-  flavors?: string[];
-  colors?: string[];
-}
-
-export async function upsertSku(data: UpsertSkuInput) {
-  try {
-    const extractId = (val: any) => (typeof val === 'object' && val !== null ? val._id : val);
-
-    const egglessId = extractId(data.eggless_id);
-    const sugarfreeId = extractId(data.sugarfree_id);
-    const gluttenfreeId = extractId(data.gluttenfree_id);
-    const flavorIds = Array.isArray(data.flavors) ? data.flavors.map(extractId) : [];
-    const colorIds = Array.isArray(data.colors) ? data.colors.map(extractId) : [];
-    
-    let sku;
-    const isValidId = data._id && mongoose.isValidObjectId(data._id);
-
-    if (isValidId) {
-      const queryId = new mongoose.Types.ObjectId(data._id);
-
-      sku = await Sku.findOneAndUpdate({ _id: queryId }, {
-          product_id: data.product_id,
-          name: data.name,
-          item_code: data.item_code,
-          unit: data.unit,
-          price_per_unit: data.price_per_unit,
-          price: data.price,
-          inventory: data.inventory,
-          status: data.status ?? true,
-          displayOrder: data.displayOrder ?? 0,
-          adminApproval: data.adminApproval ?? true,
-          eggless_id: egglessId,
-          sugarfree_id: sugarfreeId,
-          gluttenfree_id: gluttenfreeId,
-          updatedAt: new Date(),
-        }, { new: true });
-        
-      if (!sku) {
-        sku = new Sku({
-          product_id: data.product_id,
-          name: data.name,
-          item_code: data.item_code,
-          unit: data.unit,
-          price_per_unit: data.price_per_unit,
-          price: data.price,
-          inventory: data.inventory,
-          status: data.status ?? true,
-          displayOrder: data.displayOrder ?? 0,
-          adminApproval: data.adminApproval ?? true,
-          eggless_id: egglessId,
-          sugarfree_id: sugarfreeId,
-          gluttenfree_id: gluttenfreeId,
-        });
-        await sku.save();
-      }
-    } else {
-      sku = new Sku({
-        product_id: data.product_id,
-        name: data.name,
-        item_code: data.item_code,
-        unit: data.unit,
-        price_per_unit: data.price_per_unit,
-        price: data.price,
-        inventory: data.inventory,
-        status: data.status ?? true,
-        displayOrder: data.displayOrder ?? 0,
-        adminApproval: data.adminApproval ?? true,
-        eggless_id: egglessId,
-        sugarfree_id: sugarfreeId,
-        gluttenfree_id: gluttenfreeId,
-      });
-      await sku.save();
-    }
-    
-    await SkuDetail.findOneAndUpdate({ sku_id: sku._id }, {
-        weight: data.weight ?? 0,
-        length: data.length ?? 0,
-        width: data.width ?? 0,
-        height: data.height ?? 0,
-        preparationTime: data.preparationTime ?? 0,
-        updatedAt: new Date(),
-      }, { upsert: true, new: true });
-      
-    const featureIds = [ ...flavorIds, ...colorIds ];
-    await pivotEntry(SkuProductFeature, sku._id, featureIds, "sku_id", "productFeature_id");
-  
-    return sku;
-  } catch (error) { 
-    await logError(error, { function: "upsertSku", payload: { data } }); 
-  }
 }
 
 export async function get_products(req: NextApiRequest, res: NextApiResponse) {
@@ -526,14 +425,6 @@ export async function get_products(req: NextApiRequest, res: NextApiResponse) {
   } catch (error) { return await logError(error, { function: "get_products", payload: req.body }); }
 }
 
-export async function getLinkedProductIds(model: mongoose.Model<any>, field: string, values: string[]): Promise<mongoose.Types.ObjectId[]> {
-  if (!values?.length) return [];
-  const ids = values.map(id => new mongoose.Types.ObjectId(id));
-
-  const links = await model.find({ [field]: { $in: ids } }).select("product_id");
-  return links.map(l => l.product_id);
-}
-
 export async function get_single_product_by_url(req: NextApiRequest, res: NextApiResponse){
   try{
     const url = (req.method === 'GET' ? req.query.url : req.body.url) as string;
@@ -582,79 +473,6 @@ export async function get_sku_options(req: NextApiRequest, res: NextApiResponse)
   } catch (error) { await logError(error, { function: "get_sku_options", payload: req.body }); }
 }
 
-// Bulk Order
-  export async function create_bulk_order(req: ExtendedRequest, res: NextApiResponse) {
-    try {
-      const data = req.body;
-      if (!data?.name || !data?.email || !data?.phone ) { return res.status(400).json({ message: 'Required fields missing' }); }
-
-      const user_id = await getUserIdFromToken(req);
-      const newEntry = new BulkOrder({
-          user_id: user_id,
-          product_id: data.product_id,
-          sku_id: data.sku_id,
-          seller_id: data.seller_id,
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          status: data.status,
-          quantity: data.quantity,
-          user_remarks: data.user_remarks,
-          updatedAt: new Date(),
-          createdAt: new Date(),
-      });
-      await newEntry.save();
-
-      await initAction('Bulk Order', newEntry._id as Types.ObjectId);
-      
-      return res.status(201).json({ message: 'Entry created successfully', data: newEntry });
-    } catch (error) { await logError(error, { function: "create_bulk_order", payload: req.body }); }
-  }
-
-  export async function get_single_bulk_order(req: NextApiRequest, res: NextApiResponse) {
-    try {
-      const { id } = req.body;
-      if ( !id ) { return res.status(400).json({ message: 'Invalid or missing Id' }); }
-  
-      const data = await BulkOrder.findById(id).populate([ { path: 'product_id', select: 'name url' }, { path: 'seller_id', select: 'name email phone' }, { path: 'sku_id', select: 'name' } ]).exec();
-  
-      return res.status(200).json({ message: 'Single Bulk Order Fetched', data });
-    } catch (error) { return await logError(error, { function: "get_single_bulk_order", payload: req.body }); }
-  }
-
-  export async function get_all_bulk_orders(req: NextApiRequest, res: NextApiResponse) {
-    try {
-      const data = await BulkOrder.find().populate([ { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ]}, { path: 'seller_id', select: 'name email phone' }, { path: 'sku_id' } ]);     
-  
-      return res.status(200).json({ message: 'All Bulk Orders Fetched', data });
-    } catch (error) { return await logError(error, { function: "get_all_bulk_orders", payload: req.body }); }
-  }
-
-  export async function update_bulk_order(req: ExtendedRequest, res: NextApiResponse) {
-    try {
-      const data = req.body;
-      if (!data?.name || !data?.email || !data?.phone ) { return res.status(400).json({ message: 'Required fields missing' }); }
-      const entry = await BulkOrder.findByIdAndUpdate(data._id, {
-          product_id: data.product_id,
-          sku_id: data.sku_id,
-          seller_id: data.seller_id,
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          status: data.status,
-          quantity: data.quantity,
-          user_remarks: data.user_remarks,
-          admin_remarks: data.admin_remarks,
-          seller_remarks: data.seller_remarks,
-          updatedAt: new Date(),
-        },{ new: true, upsert: true }
-      );
-      
-      return res.status(201).json({ message: 'Entry created successfully', data: entry });
-    } catch (error) { await logError(error, { function: "update_bulk_order", payload: req.body }); }
-  }
-// Bulk Order
-
 export const functions: APIHandlers = {
   get_filtered_products : { middlewares: ["checkUserId", "checkPostMethod"] },
   get_single_product : { middlewares: [] },
@@ -667,11 +485,6 @@ export const functions: APIHandlers = {
   get_product_module : { middlewares: [] },
   get_sku_options : { middlewares: [] },
   get_sku_modules : { middlewares: [] },
-
-  create_bulk_order : { middlewares: [] },
-  update_bulk_order : { middlewares: ["checkUserId", "checkPostMethod"] },
-  get_all_bulk_orders : { middlewares: ["checkUserId", "checkPostMethod"] },
-  get_single_bulk_order : { middlewares: [] },
 }
 
 export const productHandlers = {
@@ -686,11 +499,6 @@ export const productHandlers = {
   get_product_module,
   get_sku_options,
   get_sku_modules,
-
-  create_bulk_order,
-  update_bulk_order,
-  get_all_bulk_orders,
-  get_single_bulk_order,
 };
 
 export const config = { api: { bodyParser: false } };

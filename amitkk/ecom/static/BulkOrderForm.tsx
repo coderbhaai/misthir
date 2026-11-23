@@ -52,7 +52,7 @@ export default function BulkOrderForm({ handleClose, product_id, sku_id, seller_
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const res = await apiRequest("POST", `product/product`, formData);
+      const res = await apiRequest("POST", `ecom/bulkOrder`, formData);
 
       if( res?.data ){
         handleClose();

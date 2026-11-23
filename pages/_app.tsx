@@ -35,7 +35,7 @@ function App({ Component, pageProps }: AppProps) {
   }, [router]);
 
   const isPreviewPage = router.pathname.startsWith("/preview");
-  const adminLayout = ["/admin", "/user"].some(prefix =>
+  const adminLayout = ["/admin", "/user", "/seller"].some(prefix =>
     router.pathname.startsWith(prefix)
   );
 

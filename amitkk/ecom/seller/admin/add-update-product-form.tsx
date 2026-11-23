@@ -18,7 +18,6 @@ import { Button } from "@amitkk/components/button/button";
 import MediaPanel, { MediaPanelHandle } from "@amitkk/basic/admin/media/media-panel";
 import { SubmitButton } from "@amitkk/components/button/LoadingSubmit";
 import { useAuth } from "contexts/AuthContext";
-import SingleUserDropdown from "@amitkk/basic/admin/spatie/SingleUserDropdown";
 import SkuCardList from "@amitkk/ecom/static/SkuCardList";
 
 const CkEditor = dynamic(() => import("@amitkk/components/admin/ckeditor-input"), { 
@@ -90,43 +89,42 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
       if (!dataId || !seller_id) return;
 
       try {
-          const res = await apiRequest("GET", `product/product?function=get_single_product&id=${dataId}`);
+          const res = await apiRequest("GET", `ecom/product?function=get_single_product&id=${dataId}`);
+          if ( !res || !res?.data ) { router.push('/404'); return null; }
 
-          if (res?.data) {
-              const product = res.data;
+          const product = res.data;
 
-              setFormData({
-                  _id: product.id || product._id || '',
-                  name: product.name || "",
-                  url: product.url || "",
-                  gtin: product.gtin || "",
-                  adminApproval: product.adminApproval ?? 1,
-                  status: product.status ?? true,
-                  displayOrder: product.displayOrder || null,
-                  dietary_type: product.dietary_type || "",
-                  seller_id: product.seller_id?._id || '',
-                  tax_id: product.tax_id?._id || product.tax_id || '',
-                  short_desc: product.short_desc || "",
-                  long_desc: product.long_desc || "",
-                  createdAt: product.createdAt,
-                  updatedAt: product.updatedAt,
-                  meta_id: product.meta_id?._id || product.meta_id || '',
-                  title: product.meta_id?.title || '',
-                  description: product.meta_id?.description || '',
-              });
+          setFormData({
+              _id: product.id || product._id || '',
+              name: product.name || "",
+              url: product.url || "",
+              gtin: product.gtin || "",
+              adminApproval: product.adminApproval ?? 1,
+              status: product.status ?? true,
+              displayOrder: product.displayOrder || null,
+              dietary_type: product.dietary_type || "",
+              seller_id: product.seller_id?._id || '',
+              tax_id: product.tax_id?._id || product.tax_id || '',
+              short_desc: product.short_desc || "",
+              long_desc: product.long_desc || "",
+              createdAt: product.createdAt,
+              updatedAt: product.updatedAt,
+              meta_id: product.meta_id?._id || product.meta_id || '',
+              title: product.meta_id?.title || '',
+              description: product.meta_id?.description || '',
+          });
 
-              setShortDesc(product.short_desc || "");
-              setLongDesc(product.long_desc || "");
-              setSelectedCategory( product?.productMeta?.filter((m: any) => m.productmeta_id?.module === "Category").map((m: any) => m.productmeta_id?._id || m.productmeta_id).filter(Boolean) || [] );
-              setSelectedTag( product?.productMeta?.filter((m: any) => m.productmeta_id?.module === "Tag").map((m: any) => m.productmeta_id?._id || m.productmeta_id).filter(Boolean) || [] );
-              setSelectedProductTypes( product?.productMeta?.filter((m: any) => m.productmeta_id?.module === "Type").map((m: any) => m.productmeta_id?._id || m.productmeta_id).filter(Boolean) || [] );
-              setSelectedBrand(product?.productBrand?.map((m: any) => m.productBrand_id?._id) || []);
-              setSelectedStorage(product?.productFeature?.filter((m: any) => m?.productFeature_id?.module === "Storage").map((m: any) => m?.productFeature_id?._id) || []);
-              setSelectedIngridient(product?.productIngridient?.map((m: any) => m?.ingridient_id?._id) || []);
-              setSelectedMediaIds(product?.medias_ids?.map((m: any) => m._id) || []);
-              const incomingSkus = product?.sku || [];
-              setSkus(incomingSkus);
-          }
+          setShortDesc(product.short_desc || "");
+          setLongDesc(product.long_desc || "");
+          setSelectedCategory( product?.productMeta?.filter((m: any) => m.productmeta_id?.module === "Category").map((m: any) => m.productmeta_id?._id || m.productmeta_id).filter(Boolean) || [] );
+          setSelectedTag( product?.productMeta?.filter((m: any) => m.productmeta_id?.module === "Tag").map((m: any) => m.productmeta_id?._id || m.productmeta_id).filter(Boolean) || [] );
+          setSelectedProductTypes( product?.productMeta?.filter((m: any) => m.productmeta_id?.module === "Type").map((m: any) => m.productmeta_id?._id || m.productmeta_id).filter(Boolean) || [] );
+          setSelectedBrand(product?.productBrand?.map((m: any) => m.productBrand_id?._id) || []);
+          setSelectedStorage(product?.productFeature?.filter((m: any) => m?.productFeature_id?.module === "Storage").map((m: any) => m?.productFeature_id?._id) || []);
+          setSelectedIngridient(product?.productIngridient?.map((m: any) => m?.ingridient_id?._id) || []);
+          setSelectedMediaIds(product?.medias_ids?.map((m: any) => m._id) || []);
+          const incomingSkus = product?.sku || [];
+          setSkus(incomingSkus);
       } catch (error) { 
           clo(error); 
       }
@@ -138,11 +136,11 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
         if (!seller_id) return;
         
         try {
-          const res_1 = await apiRequest("POST", `product/product`,{
+          const res_1 = await apiRequest("POST", `ecom/product`,{
             function: "get_product_modules",
             seller_id
           });
-
+          
           setCategory(res_1?.data?.category ?? []);
           setTag(res_1?.data?.tag ?? []);
           setProductTypes(res_1?.data?.productTypes ?? []);
@@ -199,7 +197,7 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
             formDataToSend.append("title", formData.title);
             formDataToSend.append("description", formData.description);
 
-            const res = await apiRequest("POST", `product/product`, formDataToSend);
+            const res = await apiRequest("POST", `ecom/product`, formDataToSend);
             hitToastr('success', res?.message);
 
             if( !dataId ){
@@ -216,8 +214,9 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
 
     return(
         <>
-            <div className="py-5">
-                <p>{title}</p>
+            <div className="py-3 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">{dataId ? "Update Product" : "Add Product"}</h1>
+                <a href="/seller/add-update-product" className="text-sm font-medium text-blue-600 hover:underline">Add New Product</a>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -228,7 +227,6 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
                 <OpenSelect name={String(formData.dietary_type)} label="Dietary Type" value={formData.dietary_type} onChange={(value) => setFormData((prev) => ({...prev, dietary_type: value}))} options={["Veg", "Non-Veg"].map((mod) => ({ label: mod, value: mod }))}/>
                 <StatusSelect value={formData.status} onChange={(value) => handleChange("status", value)}/>
                 <GenericSelect label="Tax" name="tax_id" value={formData.tax_id?.toString() ?? ""} options={taxOptions} onChange={(val) => setFormData({ ...formData, tax_id: val as string })}/>
-                <SingleUserDropdown value={formData.seller_id} onChange={(val) => handleChange("seller_id", val)} filters={{ role: ["Seller"] }}/>
               </div>
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <MultiSelectDropdown label="Types" options={productTypes} selected={selectedProductTypes} onChange={(e) => handleMultiSelectChange(e, setSelectedProductTypes)}/>

@@ -13,8 +13,6 @@ import { Button } from '@amitkk/components/button/button';
 import OpenSelect from '@amitkk/components/basic/OpenSelect';
 
 interface DataProps extends BulkProps{
-  function?: string;
-  selectedDataId: string | number | object | null;
 }
 
 type DataFormProps = TableDataFormProps & {
@@ -27,7 +25,6 @@ type DataFormProps = TableDataFormProps & {
 export default function DataModal({ open, handleClose, selectedDataId, handleUpdate, seller_options }: DataFormProps) {
   const initialFormData: DataProps = {
     _id: '',
-    function: 'update_bulk_order',
     name: '',
     email: '',
     phone: '',
@@ -41,7 +38,6 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     seller_remarks: '',
     createdAt: new Date(),
     updatedAt: new Date(),
-    selectedDataId,
   };
   const [formData, setFormData] = React.useState<DataProps>(initialFormData);
 
@@ -58,11 +54,10 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     if (open && selectedDataId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("POST", `product/product`,{ function: "get_single_bulk_order", id: selectedDataId});
+          const res = await apiRequest("POST", `ecom/bulkOrder`,{ function: "get_single_bulk_order", id: selectedDataId});
 
           setFormData({
             _id: res?.data?._id || '',
-            function: 'update_bulk_order',
             name: res?.data?.name || '',
             email: res?.data?.email || '',
             phone: res?.data?.phone || '',
@@ -76,7 +71,6 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
             seller_remarks: res?.data?.seller_remarks || '',
             createdAt: res?.data?.createdAt || new Date(),
             updatedAt: new Date(),
-            selectedDataId: res?.data?._id || '',
           });          
 
         } catch (error) { clo( error ); }
@@ -94,7 +88,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
 
     const fetchProducts = async () => {
       try {
-        const res = await apiRequest("GET", `product/product?function=get_sku_options&seller_id=${formData.seller_id}`);
+        const res = await apiRequest("GET", `ecom/product?function=get_sku_options&seller_id=${formData.seller_id}`);
         const products = res?.data ?? [];
         setProductOptions( products.map((p: any) => ({ _id: p._id, name: p.name })) );
 
@@ -121,7 +115,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const res = await apiRequest("POST", `product/product`, formData);
+      const res = await apiRequest("POST", `ecom/bulkOrder`, formData);
 
       if( res?.data ){
         setFormData(initialFormData);
