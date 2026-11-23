@@ -11,8 +11,8 @@ export interface MetaProps extends Document<Types.ObjectId> {
 
 const metaSchema = new Schema<MetaProps>({
   url: { type: String, required: true },
-  title: { type: String, required: true, translatable: true },
-  description: { type: String, required: true, translatable: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
   media_id: { type: Schema.Types.ObjectId, ref: 'Media' },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 

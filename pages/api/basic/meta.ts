@@ -18,6 +18,7 @@ import { buildFilterQuery } from "lib/server/plugins/buildFilterQuery";
 import ProductBrand from "lib/models/product/ProductBrand";
 import ProductFeature from "lib/models/product/ProductFeature";
 import Productmeta from "lib/models/product/Productmeta";
+import { getSitemapData } from "lib/services/seoService";
 
 type MetaInput = {
   meta_id: mongoose.Types.ObjectId | string | null;
@@ -550,25 +551,12 @@ export async function get_single_meta(req: NextApiRequest, res: NextApiResponse)
 // Sitemap
 export async function get_sitemap_links(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const [ blogs, pages, products ] = await Promise.all([
-      Blog.find({status: true}).select("_id name url").exec(),
-      Page.find({status: true}).select("_id name url").exec(),
-      Product.find({status: true}).select("_id name url").exec(),
-    ]);
+    const sitemapData = await getSitemapData();
 
-    return res.status(200).json({ message: "Fetched all Sitemap Links", data: { blogs, pages, products } });
+    return res.status(200).json({ message: "Fetched all Sitemap Links", data: { ...sitemapData } });
   } catch (error) { await logError(error, { function: "get_sitemap_links", payload: req.body }); }
 }
 
-export async function getSitemapData() {
-  const [ blogs, pages, products ] = await Promise.all([
-    Blog.find({ status: true }).select("_id name url").lean().exec(),
-    Page.find({ status: true }).select("_id name url").lean().exec(),
-    Product.find({ status: true }).select("_id name url").lean().exec(),
-  ]);
-
-  return { blogs, pages, products };
-}
 // Sitemap
 
 export const functions: APIHandlers = {

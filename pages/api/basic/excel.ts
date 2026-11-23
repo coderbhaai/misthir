@@ -8,7 +8,7 @@ import { EXCEL_MANAGER, getExcelConfig, isValidExcelType } from 'lib/excel/excel
 import { ExcelExportResult, getExcelServerConfig } from 'lib/excel/excel-server-manager';
 import XLSX from "xlsx";
 import { uploadFileLocal } from './media';
-import { deleteActionByModuleId, getSingleAction, initAction } from './action';
+import { deleteActionByModuleId, getSingleAction, initAction } from "lib/services/actionService";
 import { cleanBatch, deleteBatch, processRows } from '../jobs/job-utils';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Meta, { MetaProps } from 'lib/models/basic/Meta';

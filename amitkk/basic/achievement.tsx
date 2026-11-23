@@ -9,7 +9,7 @@ import { useAdminPage } from "hooks/useAdminPage";
 import { useAdminModal } from "hooks/useAdminModal";
 
 export function AdminAchievements() {
-  const admin = useAdminPage<GroupedAchievement>({ listEndpoint: "basic/pages", listFunction: "get_filtered_achievements" });
+  const admin = useAdminPage<GroupedAchievement>({ listEndpoint: "basic/page", listFunction: "get_filtered_achievements" });
   const modal = useAdminModal();
 
   const { setData } = admin;
@@ -19,7 +19,7 @@ export function AdminAchievements() {
     if (!module || !module_id) return;
 
     try {
-      const res = await apiRequest("POST", "basic/basic", {
+      const res = await apiRequest("POST", "basic/page", {
         function: "get_single_achievement",
         module,
         module_id,
@@ -62,11 +62,9 @@ export function AdminAchievements() {
     await refreshSingle(module, module_id);
   };
 
-  // --- THE FIX: Bind the modal open sequence to the table actions ---
   const enhancedAdmin = {
     ...admin,
     handleAddNew: () => {
-      // Clear out selected references so it knows it is a clean "Create" operation
       setExtraData({ selectedModule: "", selectedModuleId: "" });
       handleOpen();
     }

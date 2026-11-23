@@ -18,8 +18,8 @@ import { get_single_product_by_url } from '../product/product';
 import { get_page_by_url } from './page';
 import ErrorLog from 'lib/models/basic/ErrorLog';
 import { logError } from 'lib/services/errorService';
-import { getSitemapData } from './meta';
 import Client from 'lib/models/basic/Client';
+import { getSitemapData } from 'lib/services/seoService';
 
 // Modules
   interface ModuleData {
@@ -288,10 +288,6 @@ import Client from 'lib/models/basic/Client';
 type RouteExceptionContext = {
   req: NextApiRequest;
   registryEntry: any;
-  englishRegistryEntry: any;
-  englishLangDoc: any;
-  targetLangDoc: any;
-  lang: string;
   moduleType: string;
   cleanMasterSlug: string;
 };
@@ -305,11 +301,9 @@ export const ROUTE_EXCEPTION_MAP: Record<string, RouteExceptionHandler> = {
   "our clients": getClientData,
 };
 
-export async function getSitemapRouteData({registryEntry, englishRegistryEntry}: {
+export async function getSitemapRouteData({registryEntry}: {
   req: NextApiRequest;
   registryEntry: any;
-  englishRegistryEntry: any;
-  lang: string;
 }) {
   const sitemapData = await getSitemapData();
 

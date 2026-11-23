@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { deleteAction, initAction } from "pages/api/basic/action";
+import { deleteAction, initAction } from "lib/services/actionService";
 import Meta from "lib/models/basic/Meta";
 import ExcelUpload from "lib/models/excel/ExcelUpload";
 import path from "path";

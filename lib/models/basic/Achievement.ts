@@ -15,7 +15,7 @@ export interface IAchievementDoc extends Document<Types.ObjectId> {
 const achievementSchema = new Schema<IAchievementDoc>({
     module: { type: String, required: true },
     module_id: { type: Schema.Types.ObjectId, required: true, refPath: "module" },
-    name: { type: String, required: true, translatable: true },
+    name: { type: String, required: true },
     value: { type: Number, required: true, },
     media_id: { type: Schema.Types.ObjectId, ref: 'Media' },
     status: { type: Boolean, required: true, default: true },

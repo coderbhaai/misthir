@@ -1,16 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  HeadObjectCommand,
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, } from "@aws-sdk/client-s3";
 import { getPaths } from "pages/api/basic/media";
-import { addUpdateMediaModel, log } from "pages/api/utils";
-import { isValidObjectId, sanitizeText } from "@amitkk/basic/utils/utils";
 import Media from "lib/models/basic/Media";
+import { sanitizeText } from "lib/services/dataService";
+import { logError } from "lib/services/errorService";
+import { isValidObjectId } from "mongoose";
 
 interface UploadMediaParams {
   file: any;
@@ -37,10 +33,7 @@ const objectExists = async (bucket: string, key: string): Promise<boolean> => {
       })
     );
     return true;
-  } catch (err: any) {
-    if (err.name === "NotFound") return false;
-    return false;
-  }
+  } catch (error: any) { await logError(error, { function: "getUobjectExistssersWithRole", payload: { bucket, key } }); return false; }
 };
 
 const getUniqueFilenameFromCloudFlare = async ( folder: string, name: string, ext: string ): Promise<string> => {
@@ -71,29 +64,30 @@ export const deleteMediaFromR2 = async (media_id: string): Promise<boolean> => {
     await r2Client.send( new DeleteObjectCommand({ Bucket: process.env.CLOUDFLARE_R2_BUCKET!, Key: oldKey, }) );
     
     return true;
-  } catch (err) { log(err); return false; }
+  } catch (error) { await logError(error, { function: "deleteMediaFromR2", payload: { media_id } }); return false; }
 };
 
 export const uploadMediaToR2 = async ({ file, name, pathType, media_id = null }: UploadMediaParams): Promise<string | null> => {
   try {
-    if (!file) return media_id ?? null;
+    // if (!file) return media_id ?? null;
 
-    const { folder } = getPaths(pathType);
-    const originalName = (file as any).originalFilename || "file.jpg";
-    const ext = path.extname(originalName);
+    // const { folder } = getPaths(pathType);
+    // const originalName = (file as any).originalFilename || "file.jpg";
+    // const ext = path.extname(originalName);
     
-    if (media_id) { await deleteMediaFromR2(media_id); }
+    // if (media_id) { await deleteMediaFromR2(media_id); }
 
-    const filename = await getUniqueFilenameFromCloudFlare(folder, name, ext);
-    const key = folder ? `${folder}/${filename}` : filename;
+    // const filename = await getUniqueFilenameFromCloudFlare(folder, name, ext);
+    // const key = folder ? `${folder}/${filename}` : filename;
     
-    const fileStream = fs.createReadStream(file.filepath);
-    await r2Client.send( new PutObjectCommand({ Bucket: process.env.CLOUDFLARE_R2_BUCKET!, Key: key, Body: fileStream, ContentType: file.mimetype }) );
+    // const fileStream = fs.createReadStream(file.filepath);
+    // await r2Client.send( new PutObjectCommand({ Bucket: process.env.CLOUDFLARE_R2_BUCKET!, Key: key, Body: fileStream, ContentType: file.mimetype }) );
 
-    const publicUrl = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.CLOUDFLARE_R2_BUCKET}/${key}`;
-    const new_media_id = await addUpdateMediaModel({ path: publicUrl, alt: name, media_id })
+    // const publicUrl = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.CLOUDFLARE_R2_BUCKET}/${key}`;
+    // const new_media_id = await addUpdateMediaModel({ path: publicUrl, alt: name, media_id })
 
-    return new_media_id;
-  } catch (err) { log(err); return null; }
+    // return new_media_id;
+    return null;
+  } catch (error) { await logError(error, { function: "deleteMediaFromR2", payload: { file, name, pathType, media_id } }); return null; }
 };
 

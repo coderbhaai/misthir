@@ -24,13 +24,13 @@ const blockDetailSchema = new Schema<BlockDetailDocument>({
   block_id: { type: Number, required: true },
   media_id: { type: Schema.Types.ObjectId, ref: 'Media' },
   mobile_media_id: { type: Schema.Types.ObjectId, ref: 'Media' },
-  heading: { type: String, translatable: true },
+  heading: { type: String },
   url: { type: String, },
   bg_colour: { type: String, },
   status: { type: Boolean, default: true },
-  content_1: { type: String, translatable: true },
-  content_2: { type: String, translatable: true },
-  content_3: { type: String, translatable: true },
+  content_1: { type: String },
+  content_2: { type: String },
+  content_3: { type: String },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 blockDetailSchema.plugin(auditLoggerPlugin);

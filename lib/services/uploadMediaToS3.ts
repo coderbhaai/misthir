@@ -3,8 +3,8 @@ import fs from "fs";
 import FormData from "form-data";
 import fetch from "node-fetch";
 import Media from "lib/models/basic/Media";
-import { logError } from "pages/api/utils";
 import { isValidObjectId } from "mongoose";
+import { logError } from "lib/services/errorService";
 
 interface UploadMediaParams {
   file: any;

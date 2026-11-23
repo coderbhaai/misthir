@@ -15,8 +15,8 @@ export interface TabBlockDocument extends Document<Types.ObjectId> {
 const TabBlockSchema = new Schema<TabBlockDocument>({
   module: { type: String, required: true },
   module_id: { type: Schema.Types.ObjectId, required: true, refPath: "module" },
-  menu: { type: String, required: true, translatable: true },
-  content: { type: String, translatable: true },
+  menu: { type: String, required: true },
+  content: { type: String },
   status: { type: Boolean, default: true },
   displayOrder: { type: Number, },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });

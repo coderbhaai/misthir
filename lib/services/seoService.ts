@@ -7,17 +7,12 @@ import Page from "lib/models/basic/Page";
 import mongoose, { isValidObjectId, Types } from "mongoose";
 import { AnyModel } from "lib/models";
 import UrlRegistry from "lib/models/basic/UrlRegistry";
-import TranslationLanguage from "lib/models/translation/TranslationLanguage";
-import MetaTranslation from "lib/models/translation/MetaTranslation";
 import Faq from "lib/models/basic/Faq";
 import Testimonial from "lib/models/basic/Testimonial";
 import Meta from "lib/models/basic/Meta";
-import Treatment from "lib/models/medical/treatment/Treatment";
-import Hospital from "lib/models/medical/hospital/Hospital";
-import Doctor from "lib/models/medical/doctor/Doctor";
-import Package from "lib/models/medical/package/Package";
+import Product from "lib/models/product/Product";
 
-const SITE_URL = "https://www.amitkk.aus";
+const SITE_URL = "https://www.mishtir.com";
 
 type MetaInput = {
   meta_id: mongoose.Types.ObjectId | string | null;
@@ -67,7 +62,7 @@ export const generateSitemap = async () => {
   try {
     await syncUrlRegistry();
 
-    const site = "https://www.amitkk.aus";
+    const site = "https://www.mishtir.com";
 
     const urlRegistry = await UrlRegistry.find({
       url: { $ne: "/" },
@@ -75,7 +70,7 @@ export const generateSitemap = async () => {
         { "seo.robots": { $exists: false } },
         { "seo.robots": { $regex: /index/i } },
       ],
-    }).select("url module module_id translationLanguage_code seo updatedAt");
+    }).select("url module module_id seo updatedAt");
 
     const today = format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX");
 
@@ -325,43 +320,17 @@ export const generateSitemap = async () => {
     };
   };
 
-  export async function getResolvedSeoPayload(metaId: string | Types.ObjectId | null, langId: string | Types.ObjectId, defaultDoc: any, moduleName: string, urlValue: string, siteUrl: string) {
+  export async function getResolvedSeoPayload(metaId: string | Types.ObjectId | null, defaultDoc: any, moduleName: string, urlValue: string, siteUrl: string) {
     let docTitle = defaultDoc.title || defaultDoc.name || moduleName;
     let docDesc = defaultDoc.description || defaultDoc.summary || `${docTitle} - Detailed information and offerings.`;
     let noIndex = defaultDoc.noIndex || false;
 
     if (metaId) {
-      // Check if the target language is English
-      const targetLang = await TranslationLanguage.findById(langId).lean() as any;
-      const isEnglish = targetLang?.code === 'en';
-
-      if (isEnglish) {
-        // For English, read directly from the base Meta model
-        const baseMeta = await mongoose.model("Meta").findById(metaId).lean() as any;
-        if (baseMeta) {
-          docTitle = baseMeta.title || docTitle;
-          docDesc = baseMeta.description || docDesc;
-          noIndex = baseMeta.noIndex || noIndex;
-        }
-      } else {
-        // For non-English languages, look up the translation record
-        const metaTrans = await MetaTranslation.findOne({
-          meta_id: new Types.ObjectId(String(metaId)),
-          translationLanguage_id: new Types.ObjectId(String(langId)),
-        }).lean() as any;
-
-        if (metaTrans && metaTrans.isTranslated) {
-          docTitle = metaTrans.title;
-          docDesc = metaTrans.description;
-        } else {
-          // Fallback to base meta record if translation is missing/pending
-          const baseMeta = await mongoose.model("Meta").findById(metaId).lean() as any;
-          if (baseMeta) {
-            docTitle = baseMeta.title || docTitle;
-            docDesc = baseMeta.description || docDesc;
-            noIndex = baseMeta.noIndex || noIndex;
-          }
-        }
+      const baseMeta = await mongoose.model("Meta").findById(metaId).lean() as any;
+      if (baseMeta) {
+        docTitle = baseMeta.title || docTitle;
+        docDesc = baseMeta.description || docDesc;
+        noIndex = baseMeta.noIndex || noIndex;
       }
     }
 
@@ -395,15 +364,9 @@ export const generateSitemap = async () => {
         { module: 'Page', model: Page, isDynamicModule: true },
       ];
 
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.amitkk.aus";
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mishtir.com";
       const processedUrls: string[] = [];
       const specializedModules = ['Blog'];
-
-      const englishLangDoc = (await TranslationLanguage.findOne({ code: 'en' }).lean()) as unknown as { _id: Types.ObjectId } | null;
-      if (!englishLangDoc) { 
-        throw new Error("English language document not found in TranslationLanguage collection."); 
-      }
-      const englishLangId = englishLangDoc._id;
 
       for (const config of MODELS_TO_SYNC) {
         const { module: fallbackModuleName, model, urlField = 'url', isDynamicModule } = config;
@@ -449,7 +412,7 @@ export const generateSitemap = async () => {
           let seoPayload = null;
           let schemaPayload = null;
           try {
-            seoPayload = await getResolvedSeoPayload(doc.meta_id?._id || doc.meta_id, englishLangId, doc, moduleName, urlValue, siteUrl);
+            seoPayload = await getResolvedSeoPayload(doc.meta_id?._id || doc.meta_id, doc, moduleName, urlValue, siteUrl);
             schemaPayload = generateSchemaPayload(doc, moduleName, urlValue, mediaPath, siteUrl, faqs, testimonials, 'en');
           } catch (payloadErr) {
             console.error(`[SYNC_ERROR] Payload generation failed for ${urlValue}:`, payloadErr);
@@ -459,7 +422,6 @@ export const generateSitemap = async () => {
             updateOne: {
               filter: { 
                 url: urlValue, 
-                translationLanguage_id: englishLangId 
               },
               update: { 
                 $set: { 
@@ -467,7 +429,6 @@ export const generateSitemap = async () => {
                   url: urlValue, 
                   module: moduleName, 
                   module_id: moduleIdObj,
-                  translationLanguage_id: englishLangId,
                   seo: seoPayload,
                   schema: schemaPayload
                 } 
@@ -495,125 +456,11 @@ export const generateSitemap = async () => {
         }
       }
 
-      await generateLocalizedUrlRegistryEntries(englishLangId, siteUrl);
-
       if (processedUrls.length > 0) {
-        await UrlRegistry.deleteMany({ url: { $nin: processedUrls }, translationLanguage_id: englishLangId });
+        await UrlRegistry.deleteMany({ url: { $nin: processedUrls } });
       }
     } catch (error) { 
       await logError(error, { function: 'syncUrlRegistry', payload: {} }); 
-    }
-  }
-
-  async function generateLocalizedUrlRegistryEntries(englishLangId: Types.ObjectId, siteUrl: string) {
-    const activeLanguages = (await TranslationLanguage.find({ code: { $ne: 'en' }, status: true }).lean()) as unknown as Array<{
-      _id: Types.ObjectId;
-      code: string;
-    }>;
-
-    if (!activeLanguages.length) return;
-
-    const englishRegistryEntries = await UrlRegistry.find({ translationLanguage_id: englishLangId }).lean();
-    const EXCLUDED_URLS = [ '/', '' ];
-
-    for (const lang of activeLanguages) {
-      if (!lang.code) continue;
-
-      let bulkOps = [];
-
-      for (const entry of englishRegistryEntries) {
-        const normalizedUrl = (entry.url || "").replace(/^[\/]+|[\/]+$/g, '').toLowerCase();
-        if (EXCLUDED_URLS.includes(normalizedUrl)) { continue; }
-
-        const localizedUrl = `${entry.url}-language-amitkk-${lang.code}`;
-        let metaId = entry.seo?.meta_id;
-
-        const resolvedModelName = entry.module ? entry.module.replace(/\s+/g, '') : '';
-      const rawSourceDoc = entry.module_id && mongoose.models[resolvedModelName] 
-          ? await mongoose.model(resolvedModelName).findById(entry.module_id).populate({ path: 'media_id', select: 'path url' }).lean() 
-          : null;
-        const sourceDoc = rawSourceDoc as any;
-        
-        if (!metaId && entry.module_id && mongoose.models[resolvedModelName]) {
-          const defaultTitle = sourceDoc?.title || sourceDoc?.name || entry.name || "Default Title";
-          const defaultDesc = sourceDoc?.description || sourceDoc?.summary || `${defaultTitle} - Detailed information.`;
-          
-          const newMeta = await mongoose.model("Meta").create({
-            title: defaultTitle,
-            description: defaultDesc,
-            noIndex: false,
-            url: entry.url
-          });
-
-          metaId = newMeta._id;
-          await mongoose.model(resolvedModelName).findByIdAndUpdate(entry.module_id, { meta_id: newMeta._id });
-        }
-
-        if (metaId) {
-          let metaTrans = await MetaTranslation.findOne({
-            meta_id: new Types.ObjectId(String(metaId)),
-            translationLanguage_id: lang._id,
-          }).lean();
-
-          if (!metaTrans) {
-            const baseMeta = await mongoose.model("Meta").findById(metaId).lean() as any;
-
-            await MetaTranslation.create({
-              meta_id: new Types.ObjectId(String(metaId)),
-              translationLanguage_id: lang._id,
-              title: baseMeta?.title || entry.seo?.title || "Default Title",
-              description: baseMeta?.description || entry.seo?.description || "Default Description",
-              isTranslated: false,
-            });
-          }
-        }
-        
-        const localizedSeo = await getResolvedSeoPayload(metaId, lang._id, sourceDoc || {}, entry.module, localizedUrl, siteUrl);
-        const localizedSchema = generateSchemaPayload(
-          sourceDoc || {}, 
-          entry.module, 
-          localizedUrl, 
-          sourceDoc?.media_id?.path || sourceDoc?.media_id?.url || null, 
-          siteUrl, 
-          [], 
-          [], 
-          lang.code
-        );
-        
-        bulkOps.push({
-          updateOne: {
-            filter: { 
-              module: entry.module, 
-              module_id: entry.module_id, 
-              translationLanguage_id: lang._id 
-            },
-            update: {
-              $set: {
-                translationLanguage_code: String(lang.code),
-                seo: localizedSeo,
-                schema: localizedSchema,
-              },
-              $setOnInsert: {
-                name: entry.name || "Untitled Resource",
-                translated_name: null,
-                url: localizedUrl,
-                module: entry.module,
-                module_id: entry.module_id,
-                translationLanguage_id: lang._id,
-              }
-            },
-            upsert: true,
-          }
-        });
-      }
-
-      if (bulkOps.length > 0) {
-        try {
-          await UrlRegistry.bulkWrite(bulkOps, { ordered: false });
-        } catch (err: any) {
-          console.error(`Error during bulkWrite for language ${lang.code}:`, err?.message);
-        }
-      }
     }
   }
 
@@ -636,56 +483,12 @@ export const generateSitemap = async () => {
     } catch (error) { await logError(error, { function: "upsertMeta", payload: { meta_id, url, title, description, media_id } }); return null; }
   };
 
-export async function getSitemapData(translationLanguage_id?: Types.ObjectId | null) {
-  const [ blogs, pages, treatments, doctors, hospitals, packages ] = await Promise.all([
+export async function getSitemapData() {
+  const [ blogs, pages, products ] = await Promise.all([
     Blog.find({ status: true }).select("_id name url").lean().exec(),
     Page.find({ status: true }).select("_id name url").lean().exec(),
-    Treatment.find({ status: true }).select("_id name url").lean().exec(),
-    Doctor.find({ status: true }).select("_id name url").lean().exec(),
-    Hospital.find({ status: true }).select("_id name url").lean().exec(),
-    Package.find({ status: true }).select("_id name url").lean().exec(),
+    Product.find({ status: true }).select("_id name url").lean().exec(),
   ]);
 
-  let translationMap = new Map<string, {name: string; url: string;}>();
-
-  if (translationLanguage_id) {
-    const urlRegistries = await UrlRegistry.find({translationLanguage_id}).select("module module_id name translated_name url").lean().exec();
-
-    urlRegistries.forEach((registry: any) => {
-      if (!registry.module_id) return;
-
-        translationMap.set(`${registry.module}:${registry.module_id.toString()}`, {
-          name: registry.translated_name || registry.name, 
-          url: registry.url || registry.name,
-        }
-      );
-    });
-  }
-
-  const formatItems = (items: any[], module: string) => {
-    return items.map((item) => {
-      if (!item?._id) { return item; }
-
-      const translation = translationMap.get(`${module}:${item._id.toString()}`);
-      if (!translation) { return item; }
-
-      return { ...item, name: translation.name, url: translation.url };
-    });
-  };
-
-  const translatedBlogs = formatItems(blogs, "Blog");
-  const translatedPages = formatItems(pages, "Page");
-  const translatedTreatments = formatItems(treatments, "Treatment");
-  const translatedDoctors = formatItems(doctors, "Doctor");
-  const translatedHospitals = formatItems(hospitals, "Hospital");
-  const translatedPackages = formatItems(packages, "Package");
-
-  return {
-    blogs: translatedBlogs,
-    pages: translatedPages,
-    treatments: translatedTreatments,
-    doctors: translatedDoctors,
-    hospitals: translatedHospitals,
-    packages: translatedPackages,
-  };
+  return { blogs, pages, products };
 }

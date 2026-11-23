@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Types, model } from 'mongoose';
 
 interface CityDocument extends Document<Types.ObjectId> {
+  country_id?: Types.ObjectId;
   state_id?: Types.ObjectId;
   name: string;
   major?: boolean;
@@ -11,8 +12,9 @@ interface CityDocument extends Document<Types.ObjectId> {
 }
 
 const citySchema = new Schema<CityDocument>({
-  name: { type: String, required: true },
+  country_id: { type: Schema.Types.ObjectId, ref: 'Country' },
   state_id: { type: Schema.Types.ObjectId, ref: 'State' },
+  name: { type: String, required: true },
   major: { type: Boolean, default: false },
   status: { type: Boolean, default: true },
   displayOrder: { type: Number, required: false, },

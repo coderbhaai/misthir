@@ -38,7 +38,7 @@ export default function AdminTestimonial({ module = "", module_id = "" }: AdminM
 
     const head: { id: string; label: string }[] = [
                     { id: "model", label: "Module" },
-                    { id: "client", label: "Client" },
+                    { id: "User", label: "User" },
                     { id: "testimonial", label: "Testimonial" },
                     { id: "", label: "" },
                 ];

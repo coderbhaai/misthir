@@ -90,7 +90,7 @@ function getRoleMap(roleName) {
 // Optional: Internal specialized map if you still need portfolio/blog nested pages/regional structure
 function collectInternalMap() {
   const componentMap = {};
-  const INTERNAL_MODULES = ["portfolio", "blog"];
+  const INTERNAL_MODULES = ["basic", "blog", "ecom"];
   const INTERNAL_SUBDIRS = ["pages", "regional"];
 
   for (const moduleName of INTERNAL_MODULES) {

@@ -125,9 +125,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
             <TextField label='Name' value={formData.name} name='name' onChange={handleChange} required/>
             <OpenSelect label="Major" name="major" value={formData.major} onChange={(value) => setFormData((prev) => ({...prev, major: value}))} options={[ { label: "Yes", value: true }, { label: "No", value: false } ]}/>
             <StatusDisplay statusValue={formData.status} displayOrderValue={formData.displayOrder} onStatusChange={(value) => setFormData((prev) => ({...prev, status: value}))} onDisplayOrderChange={(value) => setFormData((prev) => ({...prev, displayOrder: value}))}/>
-            {/* <StickyFormFooter title={title}/> */}
-
-            <button type="button" onClick={handleSubmit} className="btn">{title}</button>
+            <button type="button" onClick={handleSubmit} className="btn w-full bottom-0">{title}</button>
         </div>
       </CustomModal>
 

@@ -200,13 +200,11 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
             formDataToSend.append("description", formData.description);
 
             const res = await apiRequest("POST", `product/product`, formDataToSend);
-            if( res?.data ){
-              hitToastr('success', res?.message);
-            }
+            hitToastr('success', res?.message);
 
             if( !dataId ){
               if( can("Edit Product") ){
-                router.replace('/admin/products');
+                router.replace(`/admin/add-update-product/${res.data._id}`);
               }else{
                 router.replace('/admin/seller/products');
               }

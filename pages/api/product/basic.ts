@@ -7,7 +7,6 @@ import ProductBrand from 'lib/models/product/ProductBrand';
 import User from 'lib/models/spatie/User';
 import UserRole from 'lib/models/spatie/UserRole';
 import UserPermission from 'lib/models/spatie/UserPermission';
-import { getUserModule } from 'services/userService';
 import Ingridient from 'lib/models/product/Ingridient';
 import ProductFeature from 'lib/models/product/ProductFeature';
 import Commission from 'lib/models/product/Commission';
@@ -17,6 +16,7 @@ import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import { APIHandlers } from 'lib/server/middleware';
 import { logError } from 'lib/services/errorService';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
+import { getUserModule } from 'lib/services/authService';
 
 // Productmeta
   export async function get_filtered_product_meta(req: NextApiRequest, res: NextApiResponse) {

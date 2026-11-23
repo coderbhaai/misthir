@@ -1,7 +1,7 @@
 // lib/excel/service.ts
 
 // import { runProcessor } from "./runner";
-import { getSingleAction, initAction } from "pages/api/basic/action";
+import { getSingleAction, initAction } from "lib/services/actionService";
 import { isValidExcelType } from "./excel-manager";
 import { EXCEL_STATUS, getExcelServerConfig } from "./excel-server-manager";
 import { processRows } from "pages/api/jobs/job-utils";

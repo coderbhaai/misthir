@@ -13,7 +13,7 @@ export interface IMenu extends Document<Types.ObjectId> {
 }
 
 const MenuSchema = new Schema<IMenu>({
-    name: { type: String, required: true, translatable: true },
+    name: { type: String, required: true },
     url: { type: String },
     parent_id: { type: Schema.Types.ObjectId, ref: "Menu", default: null },
     path: { type: String, index: true },

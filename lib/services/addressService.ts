@@ -3,6 +3,7 @@ import Country from "lib/models/address/Country";
 import State from "lib/models/address/State";
 import { NextApiRequest } from "next";
 import { logError } from "./errorService";
+import { Types } from "mongoose";
 
 export async function findOrCreateLocationFromIP(req: NextApiRequest) {
     try {
@@ -164,4 +165,49 @@ export async function seedCountryAndLocations() {
     
         return { success: true, message: "Countries and locations seeded successfully.", data: results };
     }catch (error) { await logError(error, { function: "seedCountryAndLocations", payload: {} }); return null; }
+}
+
+export async function insertIndiaStates(): Promise<{countryId: Types.ObjectId; upsertedCount: number; modifiedCount: number; }> {
+    const INDIA_STATES: string[] = [ 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Keralam', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', ];
+
+    const indiaData = {
+        name: 'India',
+        capital: 'New Delhi',
+        code: 'IN',
+        calling_code: '+91',
+        status: true,
+        displayOrder: 1,
+    };
+
+    const indiaCountry = await Country.findOneAndUpdate(
+        { $or: [{ code: 'IN' }, { name: 'India' }] },
+        { $set: indiaData },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    const countryId = indiaCountry._id;
+
+    const operations = INDIA_STATES.map((name) => ({
+        updateOne: {
+        filter: { country_id: countryId, name },
+        update: {
+            $set: {
+            country_id: countryId,
+            name,
+            major: null,
+            status: true,
+            displayOrder: null,
+            },
+        },
+        upsert: true,
+        },
+    }));
+
+    const result = await State.bulkWrite(operations, { ordered: false });
+
+    return {
+        countryId,
+        upsertedCount: result.upsertedCount ?? 0,
+        modifiedCount: result.modifiedCount ?? 0,
+    };
 }

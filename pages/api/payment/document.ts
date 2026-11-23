@@ -7,7 +7,6 @@ import ProductBrand from 'lib/models/product/ProductBrand';
 import User from 'lib/models/spatie/User';
 import UserRole from 'lib/models/spatie/UserRole';
 import UserPermission from 'lib/models/spatie/UserPermission';
-import { getUserModule } from 'services/userService';
 import Ingridient from 'lib/models/product/Ingridient';
 import ProductFeature from 'lib/models/product/ProductFeature';
 import Commission from 'lib/models/product/Commission';

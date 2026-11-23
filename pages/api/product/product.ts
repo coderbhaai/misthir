@@ -16,7 +16,7 @@ import { createApiHandler, ExtendedRequest } from '../apiHandler';
 import Tax from 'lib/models/tax/Tax';
 import { getReviews } from '../basic/review';
 import BulkOrder from 'lib/models/ecom/BulkOrder';
-import { initAction } from '../basic/action';
+import { initAction } from "lib/services/actionService";
 import { APIHandlers } from 'lib/server/middleware';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import SkuDetail from 'lib/models/product/SkuDetail';

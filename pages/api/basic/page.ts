@@ -56,94 +56,100 @@ export async function status_switch(req: NextApiRequest, res: NextApiResponse) {
 
 // PAGE
   export async function create_update_page(req: ExtendedRequest, res: NextApiResponse) {
-      try {
-        const data = req.body;
+    try {
+      const data = req.body;
 
-        const modelId = (typeof data._id === 'string' || data._id instanceof Types.ObjectId) ? data._id : null;
-        const slug = await slugify(data.url, Page, modelId);
+      const modelId = typeof data._id === 'string' || data._id instanceof Types.ObjectId ? data._id : null;
+      const slug = await slugify(data.url, Page, modelId);
 
-        let media_id: string | null = null;
-        if (data.media_id && isValidObjectId(data.media_id)) { media_id = data.media_id; }
-        const file = Array.isArray(req.files?.image) ? req.files.image[0] : req.files?.image;
-        
-        if (file) {
-          media_id = await uploadMedia({ file, name: data.name, pathType: data.path, media_id: data.media_id ?? null, user_id: null });
-      }
+      let media_id: string | null = null;
+      if (data.media_id && isValidObjectId(data.media_id)) { media_id = data.media_id; }
+      const file = Array.isArray(req.files?.image) ? req.files.image[0] : req.files?.image;
+      if (file) { media_id = await uploadMedia({ file, name: data.name, pathType: data.path, media_id: data.media_id ?? null, user_id: null }); }
 
-        let meta_id: string | null = null;
-        meta_id = await upsertMeta({ meta_id: data.meta_id ?? null, url: slug, title: data.title, description: data.description });
+      let meta_id: string | null = null;
+      meta_id = await upsertMeta({ meta_id: data.meta_id ?? null, url: slug, title: data.title, description: data.description });
 
-        if (data._id) {
-          const updated = await Page.findByIdAndUpdate(data._id, {
-              media_id,
-              meta_id,
-              url: slug,
-              module: data.module,
-              module_id: data.module_id,
-              name: data.name,
-              content: data.content,
-              status: data.status,
-              sitemap: data.sitemap,
-              schema_status: data.schema_status,
-              updatedAt: new Date(),
-            }, { new: true });
+      const pageDetailFields = {
+        faq_title: data.faq_title,
+        faq_text: data.faq_text,
+        blog_title: data.blog_title,
+        blog_text: data.blog_text,
+        contact_title: data.contact_title,
+        contact_text: data.contact_text,
+        achievement_title: data.achievement_title,
+        achievement_text: data.achievement_text,
+        testimonial_title: data.testimonial_title,
+        testimonial_text: data.testimonial_text,
+        destination_title: data.destination_title,
+        destination_text: data.destination_text,
+        mediaHub_title: data.mediaHub_title,
+        mediaHub_text: data.mediaHub_text,
+      };
 
-          await PageDetail.findOneAndUpdate({ page_id: data.page_id }, {
-              faq_title: data.faq_title,
-              faq_text: data.faq_text,
-              blog_title: data.blog_title,
-              blog_text: data.blog_text,
-              contact_title: data.contact_title,
-              contact_text: data.contact_text,
-              achievement_title: data.achievement_title,
-              achievement_text: data.achievement_text,
-              testimonial_title: data.testimonial_title,
-              testimonial_text: data.testimonial_text,
-              mediaHub_title: data.mediaHub_title,
-              mediaHub_text: data.mediaHub_text,
-            }, { upsert: true, new: true });
+      if (data._id) {
+        const moduleId = data.module === 'Page' ? data._id : data.module_id;
 
-            await generateSitemap();
-          return res.status(200).json({ message: 'Entry updated successfully', data: updated });
-        }
+        console.log("moduleId",moduleId)
 
-        const newEntry = new Page({
-          media_id,
-          meta_id,
-          url: slug,
-          module: data.module,
-          module_id: data.module_id,
-          name: data.name,
-          content: data.content,
-          status: data.status,
-          sitemap: data.sitemap,
-          schema_status: data.schema_status,
-        });
+        const updated = await Page.findByIdAndUpdate(data._id, {
+            media_id,
+            meta_id,
+            url: slug,
+            module: data.module,
+            module_id: moduleId,
+            name: data.name,
+            content: data.content,
+            status: data.status,
+            sitemap: data.sitemap,
+            schema_status: data.schema_status,
+            updatedAt: new Date(),
+          }, { new: true });
 
-        await newEntry.save();
+        if (!updated) { return res.status(404).json({ message: 'Page not found' }); }
 
-        const detail = await PageDetail.create({
-          page_id: newEntry._id,
-          faq_title: data.faq_title,
-          faq_text: data.faq_text,
-          blog_title: data.blog_title,
-          blog_text: data.blog_text,
-          contact_title: data.contact_title,
-          contact_text: data.contact_text,
-          achievement_title: data.achievement_title,
-          achievement_text: data.achievement_text,
-          testimonial_title: data.testimonial_title,
-          testimonial_text: data.testimonial_text,
-          destination_title: data.destination_title,
-          destination_text: data.destination_text,
-          mediaHub_title: data.mediaHub_title,
-          mediaHub_text: data.mediaHub_text,
-        });
+        const detailPageId = data.page_id ?? updated._id;
+        await PageDetail.findOneAndUpdate(
+          { page_id: detailPageId },
+          { $set: { page_id: detailPageId, ...pageDetailFields } },
+          { upsert: true, new: true }
+        );
 
         await generateSitemap();
+        return res.status(200).json({ message: 'Entry updated successfully', data: updated });
+      }
 
-        return res.status(201).json({ message: 'Entry created successfully', data: newEntry });
-      } catch (error) { await logError(error, { function: "create_update_page", payload: req.body }); }
+      const newEntry = new Page({
+        media_id,
+        meta_id,
+        url: slug,
+        module: data.module,
+        module_id: data.module === 'Page' ? undefined : data.module_id,
+        name: data.name,
+        content: data.content,
+        status: data.status,
+        sitemap: data.sitemap,
+        schema_status: data.schema_status,
+      });
+
+      if (data.module === 'Page') {
+        newEntry.module_id = newEntry._id;
+      }
+
+      await newEntry.save();
+
+      await PageDetail.create({
+        page_id: newEntry._id,
+        ...pageDetailFields,
+      });
+
+      await generateSitemap();
+
+      return res.status(201).json({ message: 'Entry created successfully', data: newEntry });
+    } catch (error) {
+      await logError(error, { function: 'create_update_page', payload: req.body });
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   }
 
   export async function get_filtered_pages(req: NextApiRequest, res: NextApiResponse) {
@@ -293,7 +299,7 @@ export async function status_switch(req: NextApiRequest, res: NextApiResponse) {
 
       const total = await Testimonial.countDocuments(matchQuery);
 
-      const data = await Testimonial.find(matchQuery).populate([ { path: "module_id", select: "name url" }, { path: 'media_id' },  ]).skip(skip).limit(safeLimit).sort({ createdAt: -1 });
+      const data = await Testimonial.find(matchQuery).populate([ { path: "module_id", select: "name url" }, { path: 'user_id' } ]).skip(skip).limit(safeLimit).sort({ createdAt: -1 });
       return res.status(200).json({ message: 'Fetched Filtered Testimonials', data, pagination: { total, page, limit: safeLimit, pages: Math.ceil(total / safeLimit) } });
     } catch (error) { await logError(error, { function: "get_filtered_testimonials", payload: req.body }); }
   }
@@ -312,21 +318,16 @@ export async function status_switch(req: NextApiRequest, res: NextApiResponse) {
       }
 
       if (modelId && isValidObjectId(modelId)) {
-        const updated = await Testimonial.findByIdAndUpdate(
-          data._id,
-          {
+        const updated = await Testimonial.findByIdAndUpdate(data._id, {
+            user_id: data.user_id,
             module: data.module,
             module_id: data.module_id,
             media_id: media_id ?? undefined,
-            name: data.name,
-            role: data.role,
             content: data.content,
             status: data.status,
             displayOrder: checkNullValue(data.displayOrder),
             updatedAt: new Date(),
-          },
-          { new: true }
-        );
+          }, { new: true });
 
         return res.status(200).json({ message: 'Entry updated successfully', data: updated });
       }
@@ -335,8 +336,7 @@ export async function status_switch(req: NextApiRequest, res: NextApiResponse) {
         module: data.module,
         module_id: data.module_id,
         media_id: media_id ?? undefined,
-        name: data.name,
-        role: data.role,
+        user_id: data.user_id,
         content: data.content,
         status: data.status,
         displayOrder: checkNullValue(data.displayOrder),
@@ -352,7 +352,7 @@ export async function status_switch(req: NextApiRequest, res: NextApiResponse) {
       const id = (req.method === "GET" ? req.query.id : req.body.id) as string;
       if (!id || !Types.ObjectId.isValid(id)) { return res.status(400).json({ message: 'Invalid or missing ID' }); }
   
-      const data = await Testimonial.findById(id).populate([ { path: "module_id", select: "name url" }, { path: 'media_id' } ]).exec();
+      const data = await Testimonial.findById(id).populate([ { path: "module_id", select: "name url" }, { path: 'user_id' } ]).exec();
       if (!data) { return res.status(404).json({ message: `Testimonial with ID ${id} not found` }); }
   
       return res.status(201).json({ message: 'Single Testimonial Fetched', data: data });
@@ -732,7 +732,7 @@ export const functions: APIHandlers = {
   get_single_testimonial : { middlewares: [ "checkUserId" ], url: "/admin/testimonials" },
 
   get_filtered_achievements : { middlewares: [ "checkUserId", "checkPostMethod" ], },	
-  get_single_achievement : { middlewares: [ "checkUserId", ], },
+  get_single_achievement : { middlewares: [ "checkUserId", "checkPostMethod" ], },
   create_update_achievement : { middlewares: [ "checkUserId", "checkPostMethod", { name: "validateInput", options: { requiredFields: [ "module",  "module_id"] }} ], },
 
   get_filtered_searches : { middlewares: [ "checkUserId", "checkPostMethod" ], url: "/admin/searches" },

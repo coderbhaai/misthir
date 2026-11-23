@@ -154,9 +154,7 @@ export async function getRelatedContent({ module, moduleId }: { module: string; 
         
       products = [...products, ...fallbackProducts];
     }
-
-    console.log("PRODUCTS", products);
-
+    
     const [faq, testimonials, achievements, comments, blogs] = await Promise.all([
       Faq.find(moduleFilter).select("_id question answer displayOrder").sort({ displayOrder: 1, createdAt: -1 }).lean().exec(),
       Testimonial.find(moduleFilter).select("_id content name designation company_name user_id displayOrder").sort({ displayOrder: 1, createdAt: -1 }).lean().exec(),

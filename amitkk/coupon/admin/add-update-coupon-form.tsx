@@ -208,13 +208,12 @@ const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id =
 
             const res = await apiRequest("POST", `ecom/coupon`, formDataToSend);
 
-            hitToastr('success', res?.message);            
-            if( dataId ){ return; }
-            const recordId = res?.data?._id || res?.data?.id;
+            hitToastr('success', res?.message);
+            
             if (hasAnyRole(["Seller", "Seller Staff"])) {
-                router.replace(`/seller/add-update-coupon/${recordId}`);
+                router.replace(`/seller/add-update-coupon/${res.data._id}`);
             } else {
-                router.replace(`/admin/add-update-coupon/${recordId}`);
+                router.replace(`/admin/add-update-coupon/${res.data._id}`);
             }
         } catch (error) { clo( error ); } finally { setIsSubmitting(false); }
     };

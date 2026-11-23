@@ -118,7 +118,7 @@ export type SingleTestimonialProps = {
   module_id : string;
   content: string;
   media_id: string | MediaProps;
-  client_id: string | ClientProps;
+  user_id: string | UserProps;
   status: boolean;
   displayOrder: number | null;
   createdAt: Date;

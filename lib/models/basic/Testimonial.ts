@@ -15,7 +15,7 @@ const testimonialModelSchema = new Schema<ITestimonialDoc>({
     module: { type: String, required: true },
     module_id: { type: Schema.Types.ObjectId, required: true, refPath: "module" },
     user_id: { type: Schema.Types.ObjectId, ref: 'User' },
-    content: { type: String, required: true, translatable: true },
+    content: { type: String, required: true },
     status: { type: Boolean, required: true, default: true },
     displayOrder: { type: Number, required: false, },
   }, { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }

@@ -134,18 +134,14 @@ import { checkNullValue, safeParse } from 'lib/services/dataService';
 
       if (modelId && isValidObjectId(modelId)) {
         try {
-          const updated = await State.findByIdAndUpdate(
-            modelId,
-            {
+          const updated = await State.findByIdAndUpdate(modelId, {
               country_id: data.country_id,
               name: data.name,
               status: data.status,
               displayOrder: checkNullValue(data.displayOrder),
               major: data.major,
               updatedAt: new Date(),
-            },
-            { new: true }
-          );
+            }, { new: true });
 
           if (!updated) { return res.status(404).json({ message: '❌ Entry not found for update' }); }
           return res.status(200).json({ message: '✅ Entry updated successfully', data: updated });
@@ -232,9 +228,7 @@ import { checkNullValue, safeParse } from 'lib/services/dataService';
 
       if (modelId && isValidObjectId(modelId)) {
         try {
-          const updated = await City.findByIdAndUpdate(
-            modelId,
-            {
+          const updated = await City.findByIdAndUpdate(modelId, {
               country_id: data.country_id,
               state_id: data.state_id,
               name: data.name,
@@ -242,9 +236,7 @@ import { checkNullValue, safeParse } from 'lib/services/dataService';
               displayOrder: checkNullValue(data.displayOrder),
               major: data.major,
               updatedAt: new Date(),
-            },
-            { new: true }
-          );
+            }, { new: true });
 
           if (!updated) { return res.status(404).json({ message: '❌ Entry not found for update' }); }
           return res.status(200).json({ message: '✅ Entry updated successfully', data: updated });

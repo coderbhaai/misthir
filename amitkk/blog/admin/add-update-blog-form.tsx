@@ -148,9 +148,7 @@ export const BlogForm: React.FC<DataFormProps> = ({ dataId = '' }) => {
             const res = await apiRequest("POST", `blog/blogs`, formDataToSend);
             
             hitToastr('success', res?.message);
-            if( dataId ){ return; }
-            const recordId = res?.data?._id || res?.data?.id;
-            router.replace(`/admin/add-update-blog/${recordId}`);
+            if (!dataId && res?.data?._id) { router.replace(`/admin/add-update-blog/${res.data._id}`); }
 
         } catch (error) { clo( error ); }
     };

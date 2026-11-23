@@ -26,11 +26,11 @@ const RichTextEditor = dynamic(() => import("@amitkk/components/admin/ckeditor-i
   ssr: false, loading: () => <p>Loading editor...</p>,
 });
 
-interface BlogFormProps {
+interface Props {
     dataId?: string;
 }
 
-export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
+export const PageForm: React.FC<Props> = ({ dataId = '' }) => {
     const [formData, setFormData] = React.useState<SinglePageProps>({
         _id: '',
         module: '',
@@ -58,12 +58,8 @@ export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
         testimonial_text: '',
         mediaHub_title: '',
         mediaHub_text: '',
-        service_title: "",
-        service_text: "",
-        technology_title: "",
-        technology_text: "",
-        portfolio_title: "",
-        portfolio_text: "",
+        product_title: "",
+        product_text: "",
     });
 
     const handleChange = useFormHandler(setFormData);
@@ -126,12 +122,8 @@ export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
                     testimonial_text: res?.data?.details?.testimonial_text || '',
                     mediaHub_title: res?.data?.details?.mediaHub_title || '',
                     mediaHub_text: res?.data?.details?.mediaHub_text || '',
-                    service_title: res?.data?.details?.service_title || '',
-                    service_text: res?.data?.details?.service_text || '',
-                    technology_title: res?.data?.details?.technology_title || '',
-                    technology_text: res?.data?.details?.technology_text || '',
-                    portfolio_title: res?.data?.details?.portfolio_title || '',
-                    portfolio_text: res?.data?.details?.portfolio_text || '',
+                    product_title: res?.data?.details?.product_title || '',
+                    product_text: res?.data?.details?.product_text || '',
                 });
                 setContent(res?.data?.content);
             }
@@ -170,12 +162,8 @@ export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
             formDataToSend.append("testimonial_text", formData.testimonial_text);
             formDataToSend.append("mediaHub_title", formData.mediaHub_title);
             formDataToSend.append("mediaHub_text", formData.mediaHub_text);
-            formDataToSend.append("service_title", formData.service_title);
-            formDataToSend.append("service_text", formData.service_text);
-            formDataToSend.append("technology_title", formData.technology_title);
-            formDataToSend.append("technology_text", formData.technology_text);
-            formDataToSend.append("portfolio_title", formData.portfolio_title);
-            formDataToSend.append("portfolio_text", formData.portfolio_text);
+            formDataToSend.append("product_title", formData.product_title);
+            formDataToSend.append("product_text", formData.product_text);
 
             formDataToSend.append("path", "page");
             const mediaId = extractMediaId(formData.media_id);
@@ -186,7 +174,7 @@ export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
             const res = await apiRequest("POST", `basic/page`, formDataToSend);
             
             hitToastr('success', res?.message);
-            if( !dataId && res?.data ){router.replace('/admin/pages'); }
+            if (!dataId && res?.data?._id) { router.replace(`/admin/add-update-page/${res.data._id}`); }
             
         } catch (error) { clo( error ); }
     };
@@ -199,9 +187,11 @@ export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
 
     return(
         <>
-            <div className="py: 3">
+            <div className="py-3 flex items-center justify-between">
                 <h1 className="text-3xl font-bold">{dataId ? "Update Page" : "Add Page"}</h1>
+                <a href="/admin/add-update-page" className="text-sm font-medium text-blue-600 hover:underline">Add New Page</a>
             </div>
+            
             <form onSubmit={handleSubmit} style={{ padding: "10px" }}>
                 <div className="row">
                     <div className="col-span-12 md:col-span-8">
@@ -241,12 +231,8 @@ export const PageForm: React.FC<BlogFormProps> = ({ dataId = '' }) => {
                         <Textarea label="Achievement Text" value={formData.achievement_text} name="achievement_text" onChange={handleChange} rows={4} />
                         <TextField label="MediaHub Title" value={formData.mediaHub_title} name="mediaHub_title" onChange={handleChange}/>
                         <Textarea label="MediaHub Text" value={formData.mediaHub_text} name="mediaHub_text" onChange={handleChange} rows={4} />
-                        <TextField label="Service Title" value={formData.service_title} name="service_title" onChange={handleChange}/>
-                        <Textarea label="Service Text" value={formData.service_text} name="service_text" onChange={handleChange} rows={4} />
-                        <TextField label="Technology Title" value={formData.technology_title} name="technology_title" onChange={handleChange}/>
-                        <Textarea label="Technology Text" value={formData.technology_text} name="technology_text" onChange={handleChange} rows={4} />
-                        <TextField label="Portfolio Title" value={formData.portfolio_title} name="portfolio_title" onChange={handleChange}/>
-                        <Textarea label="Portfolio Text" value={formData.portfolio_text} name="portfolio_text" onChange={handleChange} rows={4} />
+                        <TextField label="Service Title" value={formData.product_title} name="product_title" onChange={handleChange}/>
+                        <Textarea label="Service Text" value={formData.product_text} name="product_text" onChange={handleChange} rows={4} />
                     </div>
                 </div>
             </form>

@@ -20,13 +20,13 @@ const GenericBlockSchema = new Schema<GenericBlockDocument>({
   module: { type: String, required: true },
   module_id: { type: Schema.Types.ObjectId, required: true, refPath: "module" },
   block_id: { type: Number, required: true },
-  heading: { type: String, translatable: true },
+  heading: { type: String },
   url: { type: String, },
   status: { type: Boolean, default: true },
   displayOrder: { type: Number, },
   media_id: { type: Schema.Types.ObjectId, ref: 'Media' },
   mobile_media_id: { type: Schema.Types.ObjectId, ref: 'Media' },
-  content: { type: String, translatable: true },
+  content: { type: String },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 GenericBlockSchema.plugin(auditLoggerPlugin);

@@ -9,7 +9,8 @@ export  function AdminAddress(){
     const admin = useAdminPage<AddressProps>({ listEndpoint: "address/address", listFunction: "get_filtered_addresses", singleFunction: "get_single_author" });
 
     const FILTER_CONFIG = [
-        { name: "SearchFilter", grid: "col-span-9", },
+        { name: "UserFilter", grid: "col-span-3" },
+        { name: "SearchFilter", grid: "col-span-6", },
         { name: "StatusFilter", grid: "col-span-3", },
     ] as const;
 

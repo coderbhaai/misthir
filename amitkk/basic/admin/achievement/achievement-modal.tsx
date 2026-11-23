@@ -76,7 +76,7 @@ export default function DataModal({ open, handleClose, selectedModule, selectedM
     if (open && selectedModule && selectedModuleId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("POST", `basic/basic`, {
+          const res = await apiRequest("POST", `basic/page`, {
             function: "get_single_achievement",
             module: selectedModule,
             module_id: selectedModuleId,
@@ -135,7 +135,7 @@ export default function DataModal({ open, handleClose, selectedModule, selectedM
         }
       });
 
-      const res = await apiRequest("POST", `basic/basic`, formDataToSend);
+      const res = await apiRequest("POST", `basic/page`, formDataToSend);
 
       if (res?.data) {
         hitToastr("success", res.message);

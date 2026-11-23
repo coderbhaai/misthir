@@ -12,8 +12,7 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import bcrypt from "bcryptjs";
 import { AnyModel } from 'lib/models';
 import { checkPermissionLogic } from 'pages/api/basic/auth';
-import { getUsersWithRole } from 'services/userService';
-import { getUserIdFromToken } from 'lib/services/authService';
+import { getUserIdFromToken, getUsersWithRole } from 'lib/services/authService';
 import { getDuplicateKeyErrorMessage, logError } from 'lib/services/errorService';
 import { pivotEntry, safeParse } from 'lib/services/dataService';
 

@@ -201,13 +201,11 @@ const AddUpdateSaleForm: React.FC<DataFormProps> = ({ dataId = "", seller_id = "
             const res = await apiRequest("POST", `ecom/sales`, formDataToSend);
 
             hitToastr('success', res?.message);
-            if( dataId ){ return; }
-
-            const recordId = res?.data?._id || res?.data?.id;
+            
             if (hasAnyRole(["Seller", "Seller Staff"])) {
-                router.replace(`/seller/add-update-sales/${recordId}`);
+                router.replace(`/seller/add-update-sales/${res.data._id}`);
             } else {
-                router.replace(`/admin/add-update-sales/${recordId}`);
+                router.replace(`/admin/add-update-sales/${res.data._id}`);
             }
         } catch (error) { clo( error ); } finally { setIsSubmitting(false); }
     };

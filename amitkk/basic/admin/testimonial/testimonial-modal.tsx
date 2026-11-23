@@ -12,6 +12,7 @@ import SingleClientDropdown from '@amitkk/basic/admin/client/SingleClientDropdow
 import ModuleSelector from '@amitkk/components/admin/ModuleSelector';
 import MediaImage from '@amitkk/components/admin/table-image';
 import ImageUpload from '@amitkk/components/admin/file-input';
+import SingleUserDropdown from '../spatie/SingleUserDropdown';
 
 type DataFormProps = TableDataFormProps & {
   handleUpdate: () => Promise<void>;
@@ -26,7 +27,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     _id: '',
     module: module,
     module_id: module_id,
-    client_id: '',
+    user_id: '',
     media_id: '',
     content: '',
     displayOrder: null,
@@ -71,7 +72,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
             module_id: res?.data?.module_id?._id || '',
             media_id: res?.data?.media_id || null,
             content: res?.data?.content || '',
-            client_id: res?.data?.client_id?._id,
+            user_id: res?.data?.user_id?._id,
             displayOrder: res?.data?.displayOrder || '',
             status: res?.data?.status ?? true,
             createdAt: res?.data?.createdAt || new Date(),
@@ -93,7 +94,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("displayOrder", formData.displayOrder?.toString() || "0");
       formDataToSend.append("module", formData.module);
       formDataToSend.append("module_id", formData.module_id);
-      formDataToSend.append("client_id", formData.client_id as string);
+      formDataToSend.append("user_id", formData.user_id as string);
       formDataToSend.append("content", formData.content);
       formDataToSend.append("path", "testimonial");
       const mediaId = extractMediaId(formData.media_id);
@@ -123,7 +124,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
         <form onSubmit={handleSubmit} className="space-y-4">
           <ModuleSelector formData={formData} onFieldChange={handleModuleChange}/>
           <StatusDisplay statusValue={formData.status} displayOrderValue={formData.displayOrder} onStatusChange={(value) => setFormData((prev) => ({...prev, status: value}))} onDisplayOrderChange={(value) => setFormData((prev) => ({...prev, displayOrder: value}))}/>
-          <SingleClientDropdown value={formData.client_id as string} onChange={(value) => setFormData((prev) => ({...prev, client_id: value}))} required={true}/>
+          <SingleUserDropdown value={String(formData.user_id)} onChange={(val) => handleChange("user_id", val)}/>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <MediaImage media={formData.media_id as MediaProps} style={{ marginRight: "10px", width: "120px", height: "70px" }}/>
             <ImageUpload name="image" label="Upload Image" required={!selectedDataId} onChange={(name, file) => { setImage(file); }}/>
