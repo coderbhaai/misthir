@@ -105,7 +105,11 @@ export const SellerProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
     if (!dataId || !seller_id) return;
 
     try {
-        const res = await apiRequest("GET", `ecom/product?function=get_single_product&id=${dataId}`);
+        const res = await apiRequest("POST", `ecom/product`, {
+          function: "get_single_product",
+          id: dataId,
+          seller_id
+        });
         if ( !res || !res?.data ) { router.push('/404'); return null; }
 
         const product = res.data;

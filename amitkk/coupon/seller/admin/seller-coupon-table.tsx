@@ -1,17 +1,14 @@
 import { TableCell, TableRow } from '@amitkk/components/basic/table';
 import MediaImage from '@amitkk/components/admin/table-image';
 import { CouponProps } from '@amitkk/coupon/types';
-import DateTimeFormat from '@amitkk/components/admin/date-format';
 import { ActionCell } from '@amitkk/components/basic/ActionCell';
 import { MediaProps } from '@amitkk/basic/types/media';
-
-export interface DataProps extends CouponProps {
-  selectedDataId: string | number | object | null;
-}
+import { DateRangeDisplay } from '@amitkk/components/basic/DateRangeBadge';
+import { DiscountDisplay } from '@amitkk/coupon/static/DiscountDisplay';
 
 type Props = {
-  row: DataProps;
-  onEdit: (row: DataProps) => void;
+  row: CouponProps;
+  onEdit: (row: CouponProps) => void;
 };
 
 export function AdminDataTable({ row, onEdit }: Props) {
@@ -19,15 +16,16 @@ export function AdminDataTable({ row, onEdit }: Props) {
     <>
       <TableRow>
         <TableCell>
+          {row.name} - {row.coupon_code}<br/>
+          Coupon By - {row.coupon_by}<br/>
           Usage Type - {row.usage_type}<br/>
-          Discount Type - {row.discount_type}<br/>
-          {row.name} - {row.code}
         </TableCell>
-        <TableCell><DateTimeFormat value={row.valid_from}/>- <DateTimeFormat value={row.valid_to}/></TableCell>
+        <TableCell><DateRangeDisplay validFrom={row.valid_from} validTo={row.valid_to}/></TableCell>
         <TableCell><MediaImage media={row.media_id as MediaProps}/></TableCell>
         <TableCell>
-          Discount - {row.discount}
-          Sales - {row.sales}
+          Discount Type - {row.discount_type}<br/>
+          <DiscountDisplay type={row.discount_type} value={row.discount} /><br/>
+          Sales - ₹{row.sales}
         </TableCell>
         <ActionCell row={row} modelName="Coupon" onEdit={onEdit}/>
       </TableRow>

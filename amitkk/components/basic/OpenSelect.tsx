@@ -46,7 +46,6 @@ function OpenSelect<T = string | number | boolean>({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const hasValue = value !== undefined && value !== null && value !== "";
   const floating = focused || open || hasValue;
-  
 
   useEffect(() => {
     const handleOutside = (event: MouseEvent) => {
@@ -65,14 +64,14 @@ function OpenSelect<T = string | number | boolean>({
   }, [onSearchChange]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || disabled) return;
 
     const timer = setTimeout(() => {
       searchInputRef.current?.focus();
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [open]);
+  }, [open, disabled]);
 
   const filteredOptions = useMemo(() => {
     if (onSearchChange) return options;
@@ -80,53 +79,56 @@ function OpenSelect<T = string | number | boolean>({
     return options.filter((option) =>
       option.label.toLowerCase().includes(search.toLowerCase())
     );
-  }, [options, search]);
+  }, [options, search, onSearchChange]);
 
   const selectedOption = options.find((option) => option.value === value);
 
-const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const val = e.target.value;
-  setSearch(val);
-  if (onSearchChange) { onSearchChange(val); }
-};
-
-useEffect(() => {
-  const handleOutside = (event: MouseEvent) => {
-    if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-      setOpen(false);
-      setFocused(false);
-      setSearch("");
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearch(val);
+    if (onSearchChange) {
+      onSearchChange(val);
     }
   };
 
-  document.addEventListener("mousedown", handleOutside);
-  return () => { document.removeEventListener("mousedown", handleOutside); };
-}, []);
-
   return (
-    <div className="relative w-full" ref={wrapperRef}>
+    <div
+      ref={wrapperRef}
+      className={`relative w-full ${disabled ? "cursor-not-allowed select-none" : ""}`}
+    >
       <button
         type="button"
+        name={name}
         disabled={disabled}
+        aria-disabled={disabled}
         className={`h-14 w-full rounded-xl border px-4 text-left text-sm outline-none transition-all duration-200 
           ${disabled
-            ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+            ? "bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed pointer-events-none"
             : error
               ? "bg-white border-red-500"
               : "bg-white border-gray-300 hover:border-gray-400 focus:border-primary"
           }`}
         onClick={() => {
+          if (disabled) return;
           setOpen((prev) => !prev);
           setFocused(true);
         }}
       >
         <span className="flex h-full items-center justify-between">
-          <span className={selectedOption ? "text-gray-900" : "text-gray-400"}>
+          <span
+            className={
+              disabled
+                ? "text-gray-500"
+                : selectedOption
+                  ? "text-gray-900"
+                  : "text-gray-400"
+            }
+          >
             {selectedOption?.label || placeholder}
           </span>
           <ChevronDown
             size={18}
-            className={`transition ${open ? "rotate-180" : ""} ${disabled ? "text-gray-300" : ""}`}
+            className={`transition ${open ? "rotate-180" : ""} ${disabled ? "text-gray-400" : ""}`}
           />
         </span>
       </button>
@@ -136,7 +138,7 @@ useEffect(() => {
           className={`pointer-events-none absolute left-3 z-10 px-1 transition-all duration-200 
             ${floating ? "-top-2 text-xs" : "top-1/2 -translate-y-1/2 text-sm"} 
             ${disabled
-              ? "bg-transparent text-gray-400"
+              ? "bg-white text-gray-400"
               : floating
                 ? "bg-white text-primary"
                 : "bg-white text-gray-500"
@@ -144,7 +146,7 @@ useEffect(() => {
             ${error ? "text-red-500" : ""}`}
         >
           {label}
-          {required && (<span className="ml-0.5 text-red-500">*</span>)}
+          {required && <span className="ml-0.5 text-red-500">*</span>}
         </label>
       )}
 

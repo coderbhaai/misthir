@@ -1,21 +1,42 @@
+// pages/seller/add-update-coupon/[id].tsx
+
+import { hitToastr } from '@amitkk/basic/utils/my-utils/admin-utils';
+import { getSellerId } from '@amitkk/basic/utils/my-utils/ecom-utils';
 import SellerCouponForm from '@amitkk/coupon/admin/add-update-coupon-form';
-import { useSellerId } from 'hooks/useSellerId';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const EditSellerCouponId = () => {
   const router = useRouter();
   const { id } = router.query;
-  const seller_id = useSellerId();
+  const [sellerId, setSellerId] = useState<string>('');
+  const [isLoadingSeller, setIsLoadingSeller] = useState(true);
 
   useEffect(() => {
-  }, [router.query]);
+    let isMounted = true;
 
-  if (!router.isReady) return <div>Loading...</div>;
+    const loadSellerId = async () => {
+      const sellerRes = await getSellerId();
+      if (!isMounted) return;
+      if (sellerRes.error) { hitToastr('error', sellerRes.error.message); }
 
+      setSellerId(sellerRes.seller_id ?? '');
+      setIsLoadingSeller(false);
+    };
+
+    loadSellerId();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (!router.isReady || isLoadingSeller) return <div>Loading...</div>;
   if (!id) return <div>Error: No ID found</div>;
 
-  return <SellerCouponForm dataId={id as string} seller_id ={seller_id as string} coupon_by="Seller"/>;
+  return (
+    <SellerCouponForm dataId={id as string} seller_id={sellerId} coupon_by="Seller"/>
+  );
 };
 
 export default EditSellerCouponId;

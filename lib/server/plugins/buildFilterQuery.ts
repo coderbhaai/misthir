@@ -4,7 +4,7 @@ export interface BuildFilterOptionsGeneric {
   searchableFields?: string[];
   defaultLimit?: number;
   maxLimit?: number;
-  
+
   objectIdFields?: string[];
   booleanFields?: string[];
   exactFields?: string[];
@@ -13,7 +13,7 @@ export interface BuildFilterOptionsGeneric {
 }
 
 export function buildFilterQuery<T extends Document>(
-  filters: Record<string, any> = {}, 
+  filters: Record<string, any> = {},
   options?: BuildFilterOptionsGeneric & { page?: number; limit?: number }
 ): {
   matchQuery: FilterQuery<T>;
@@ -47,20 +47,20 @@ export function buildFilterQuery<T extends Document>(
         const objectIdVal = new Types.ObjectId(value);
         (query as any).$or = (query as any).$or || [];
         (query as any).$or.push(
-          { user_id: objectIdVal }, 
+          { user_id: objectIdVal },
           { seller_id: objectIdVal }
         );
       }
       continue;
     }
 
-    const isIdField = key.endsWith('_id') || objectIdFields.includes(key);
+    const isIdField = key.endsWith("_id") || objectIdFields.includes(key);
     if (isIdField) {
       if (Array.isArray(value)) {
         const validIds = value
           .filter((v) => Types.ObjectId.isValid(v))
           .map((v) => new Types.ObjectId(v));
-          
+
         if (validIds.length > 0) {
           (query as any)[key] = { $in: validIds };
         }
@@ -113,7 +113,7 @@ export function buildFilterQuery<T extends Document>(
       (query as any).status = value;
       continue;
     }
-    
+
     (query as any)[key] = value;
   }
 

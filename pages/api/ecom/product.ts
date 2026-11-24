@@ -20,15 +20,14 @@ import { escapeRegExp, getRelatedContent, pivotEntry } from 'lib/services/dataSe
 import { syncMediaHub } from 'lib/services/mediaService';
 import { logError } from 'lib/services/errorService';
 import { getLinkedProductIds, getSellerIdFromToken, upsertSku } from 'lib/services/ecomService';
+import { sellerFilter } from 'lib/server/plugins/sellerFilter';
 
 export async function get_filtered_products(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { filters = {}, page = 0, limit = 10 } = req.body || {};
     const { matchQuery, skip, limit: safeLimit } = buildFilterQuery(filters, { page, limit, defaultLimit: 10, maxLimit: 100, searchableFields: ["name", "url"], ignoreKeys: ["search", "productType_id", "productBrand_id"] });
-
-    const { sellerId, error } = await getSellerIdFromToken(req);
+    const { error } = await sellerFilter(matchQuery, req);
     if (error) { return res.status(error.status).json({ message: error.message }); }
-    if (sellerId) { matchQuery.seller_id = new mongoose.Types.ObjectId(sellerId); }
     
     const search = filters.search?.trim();
     if (filters.productType_id) {
@@ -141,14 +140,12 @@ export async function get_single_product(req: NextApiRequest, res: NextApiRespon
     const id = (req.method === 'GET' ? req.query.id : req.body.id) as string;
     if (!id || !Types.ObjectId.isValid(id)) { return res.status(400).json({ message: 'Invalid or missing ID' });  }
 
-    const { seller_id } = req.query;
+    const { seller_id } = req.body;
     const filter: any = {};
-
     filter._id = new mongoose.Types.ObjectId(id);
     if (seller_id && mongoose.Types.ObjectId.isValid(seller_id as string)) {
       filter.seller_id = new mongoose.Types.ObjectId(seller_id as string);
     }
-
     const { sellerId, error } = await getSellerIdFromToken(req);
     if (error) { return res.status(error.status).json({ message: error.message }); }
     if (sellerId) { filter.seller_id = new mongoose.Types.ObjectId(sellerId); }
@@ -475,7 +472,7 @@ export async function get_sku_options(req: NextApiRequest, res: NextApiResponse)
 
 export const functions: APIHandlers = {
   get_filtered_products : { middlewares: ["checkUserId", "checkPostMethod"] },
-  get_single_product : { middlewares: [] },
+  get_single_product : { middlewares: ["checkUserId", "checkPostMethod"] },
   create_update_product : { middlewares: ["checkUserId", "checkPostMethod"] },
 
   get_product_modules : { middlewares: ["checkPostMethod"] },

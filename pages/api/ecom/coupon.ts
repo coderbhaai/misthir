@@ -19,11 +19,17 @@ import CouponTarget from 'lib/models/coupon/CouponTarget';
 import { getCartIdFromRequest } from '../cartUtils';
 import CouponUser from 'lib/models/coupon/CouponUser';
 import CouponUsageLog from 'lib/models/coupon/CouponUsageLog';
+import { escapeRegExp } from 'lib/services/dataService';
+import { getSellerIdFromToken } from 'lib/services/ecomService';
+import { sellerFilter } from 'lib/server/plugins/sellerFilter';
 
 export async function get_filtered_coupon(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { filters = {}, page = 0, limit = 10 } = req.body || {};
     const { matchQuery, skip, limit: safeLimit } = buildFilterQuery(filters, { page, limit, defaultLimit: 10, maxLimit: 100, searchableFields: ["name", "url"] });
+    const { error } = await sellerFilter(matchQuery, req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+    
     const total = await Coupon.countDocuments(matchQuery);
     
     const data = await Coupon.find(matchQuery).populate([ 
@@ -41,8 +47,18 @@ export async function get_single_coupon(req: NextApiRequest, res: NextApiRespons
   try{
     const id = (req.method === 'GET' ? req.query.id : req.body.id) as string;
     if (!id || !Types.ObjectId.isValid(id)) { return res.status(400).json({ message: 'Invalid or missing ID' }); }
+
+    const { seller_id } = req.body;
+    const filter: any = {};
+    filter._id = new mongoose.Types.ObjectId(id);
+    if (seller_id && mongoose.Types.ObjectId.isValid(seller_id as string)) {
+      filter.seller_id = new mongoose.Types.ObjectId(seller_id as string);
+    }
+    const { sellerId, error } = await getSellerIdFromToken(req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+    if (sellerId) { filter.seller_id = new mongoose.Types.ObjectId(sellerId); }
   
-    const entry = await Coupon.findById(id).populate([ { path: "media_id" }, { path: "seller_id", select: "_id name email phone" }, { path: "bogo_items", populate: [ { path: "buy_id", select: "_id sku name" }, { path: "get_id", select: "_id sku name" }, ] } ]).exec();
+    const entry = await Coupon.findOne(filter).populate([ { path: "media_id" }, { path: "seller_id", select: "_id name email phone" }, { path: "bogo_items", populate: [ { path: "buy_id", select: "_id sku name" }, { path: "get_id", select: "_id sku name" }, ] } ]).exec();
     if (!entry) { return res.status(404).json({ message: `Coupon with ID ${id} not found` }); }
   
     const targets = await CouponTarget.find({ coupon_id: entry._id }).lean();
@@ -130,13 +146,23 @@ export async function create_update_coupon(req: ExtendedRequest, res: NextApiRes
 
 export async function get_target_options(req: ExtendedRequest, res: NextApiResponse) {
   try {
-    const { module, seller_id, search, selected_ids } = req.body || req.query;
+    const { module, seller_id: bodyOrQuerySellerId, search, selected_ids } = req.body || req.query;
+
+    const { sellerId: tokenSellerId, error } = await getSellerIdFromToken(req);
+    if (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
+
+    const effectiveSellerId = tokenSellerId || (typeof bodyOrQuerySellerId === "string" && bodyOrQuerySellerId.trim() ? bodyOrQuerySellerId.trim() : null);
+    if (effectiveSellerId && !Types.ObjectId.isValid(effectiveSellerId)) {
+      return res.status(400).json({ message: "Invalid seller ID." });
+    }
 
     const modules: string[] = Array.isArray(module) ? module : [module].filter(Boolean);
     const selectedIdsArray: string[] = Array.isArray(selected_ids) ? selected_ids : (selected_ids ? [selected_ids] : []);
     const selectedObjectIds = selectedIdsArray.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
-    const searchFilter = search && search.trim() !== "" ? { name: { $regex: search, $options: "i" } } : {};
-    const sellerFilter = seller_id ? { seller_id: new Types.ObjectId(seller_id) } : {};
+    const searchFilter = search && search.trim() !== "" ? { name: { $regex: escapeRegExp(search.trim()), $options: "i" } } : {};
+    const sellerFilter = effectiveSellerId ? { seller_id: new Types.ObjectId(effectiveSellerId) } : {};
 
     let productsPromise: Promise<any[]> = Promise.resolve([]);
     let productBrandsPromise: Promise<any[]> = Promise.resolve([]);
@@ -144,13 +170,18 @@ export async function get_target_options(req: ExtendedRequest, res: NextApiRespo
 
     if (modules.includes("Product")) {
       productsPromise = (async () => {
-        const searchResults = await Product.find({ ...sellerFilter, ...searchFilter }).populate([{ path: "skus" }]).limit(50).lean();
+        const searchResults = await Product.find({ ...sellerFilter, ...searchFilter })
+          .populate([{ path: "skus" }])
+          .limit(50)
+          .lean();
         const searchResultIds = new Set(searchResults.map((p: any) => p._id.toString()));
         const missingSelectedIds = selectedObjectIds.filter((id) => !searchResultIds.has(id.toString()));
 
         let forcedProducts: any[] = [];
         if (missingSelectedIds.length > 0) {
-          forcedProducts = await Product.find({ _id: { $in: missingSelectedIds } }).populate([{ path: "skus" }]).lean();
+          forcedProducts = await Product.find({ _id: { $in: missingSelectedIds }, ...sellerFilter })
+            .populate([{ path: "skus" }])
+            .lean();
         }
 
         const combined = [...forcedProducts, ...searchResults];
@@ -160,15 +191,20 @@ export async function get_target_options(req: ExtendedRequest, res: NextApiRespo
       })();
     }
 
-    if (modules.includes("Product Brand")) {
+    if (modules.includes("ProductBrand") || modules.includes("Product Brand")) {
       productBrandsPromise = (async () => {
-        const searchResults = await ProductBrand.find({ ...searchFilter }).select("_id name").limit(50).lean();
+        const searchResults = await ProductBrand.find({ ...sellerFilter, ...searchFilter })
+          .select("_id name")
+          .limit(50)
+          .lean();
         const searchResultIds = new Set(searchResults.map((b: any) => b._id.toString()));
         const missingSelectedIds = selectedObjectIds.filter((id) => !searchResultIds.has(id.toString()));
 
         let forcedBrands: any[] = [];
         if (missingSelectedIds.length > 0) {
-          forcedBrands = await ProductBrand.find({ _id: { $in: missingSelectedIds } }).select("_id name").lean();
+          forcedBrands = await ProductBrand.find({ _id: { $in: missingSelectedIds }, ...sellerFilter })
+            .select("_id name")
+            .lean();
         }
 
         const combined = [...forcedBrands, ...searchResults];
@@ -178,19 +214,28 @@ export async function get_target_options(req: ExtendedRequest, res: NextApiRespo
       })();
     }
 
-    if (modules.includes("Product Type")) {
+    if (modules.includes("ProductType") || modules.includes("Product Type")) {
       productTypesPromise = (async () => {
         const sellerProducts = await Product.find(sellerFilter).select("_id").lean();
         const productIds = sellerProducts.map((p) => p._id);
 
-        const productMetas = productIds.length > 0 ? await ProductProductmeta.find({ product_id: { $in: productIds } }).select("productmeta_id").lean() : [];
+        const productMetas =
+          productIds.length > 0
+            ? await ProductProductmeta.find({ product_id: { $in: productIds } }).select("productmeta_id").lean()
+            : [];
         const metaIds = [...new Set(productMetas.map((pm) => pm.productmeta_id))];
 
-        const searchResults = metaIds.length > 0 ? await Productmeta.find({ 
-          _id: { $in: metaIds }, 
-          module: "Type", 
-          ...searchFilter 
-        }).select("_id name").limit(50).lean() : [];
+        const searchResults =
+          metaIds.length > 0
+            ? await Productmeta.find({
+                _id: { $in: metaIds },
+                module: "Type",
+                ...searchFilter,
+              })
+                .select("_id name")
+                .limit(50)
+                .lean()
+            : [];
 
         const searchResultIds = new Set(searchResults.map((t: any) => t._id.toString()));
         const missingSelectedIds = selectedObjectIds.filter((id) => !searchResultIds.has(id.toString()));
@@ -199,8 +244,10 @@ export async function get_target_options(req: ExtendedRequest, res: NextApiRespo
         if (missingSelectedIds.length > 0) {
           forcedTypes = await Productmeta.find({
             _id: { $in: missingSelectedIds },
-            module: "Type"
-          }).select("_id name").lean();
+            module: "Type",
+          })
+            .select("_id name")
+            .lean();
         }
 
         const combined = [...forcedTypes, ...searchResults];
@@ -226,7 +273,9 @@ export async function get_target_options(req: ExtendedRequest, res: NextApiRespo
     });
   } catch (error) {
     await logError(error, { function: "get_target_options", payload: req.body });
-    return res.status(500).json({ message: "Server error", error });
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Server error", error });
+    }
   }
 }
 
@@ -298,8 +347,8 @@ export async function handleApplyCoupon(cart_id: string, coupon_code: string) {
   const hasTargets = targets.length > 0;
   const targetSkus = new Set(targets.filter(t => t.module === "Sku").map(t => t.module_id.toString()));
   const targetProducts = new Set(targets.filter(t => t.module === "Product").map(t => t.module_id.toString()));
-  const targetBrands = new Set(targets.filter(t => t.module === "Product Brand").map(t => t.module_id.toString()));
-  const targetTypes = new Set(targets.filter(t => t.module === "Product Type").map(t => t.module_id.toString()));
+  const targetBrands = new Set(targets.filter(t => t.module === "ProductBrand").map(t => t.module_id.toString()));
+  const targetTypes = new Set(targets.filter(t => t.module === "ProductType").map(t => t.module_id.toString()));
 
   let productTypeMap = new Set<string>();
   if (targetTypes.size > 0) {
@@ -413,7 +462,7 @@ export const functions: APIHandlers = {
   create_update_coupon : { middlewares: ["checkUserId", "checkPostMethod" ] },
   get_filtered_coupon : { middlewares: ["checkUserId", "checkPostMethod" ] },
   get_target_options : { middlewares: ["checkUserId", "checkPostMethod" ] },
-  get_single_coupon : { middlewares: [] },
+  get_single_coupon : { middlewares: ["checkUserId", "checkPostMethod"] },
   apply_coupon : { middlewares: ["checkPostMethod"] },
 }
 
