@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface SaleDoc extends Document<Types.ObjectId> {
   name: string;
+  sale_by: string;
   seller_id?: string | Types.ObjectId;
   media_id?: string | Types.ObjectId;
   sales: number;
@@ -18,6 +19,7 @@ export interface SaleDoc extends Document<Types.ObjectId> {
 
 const SaleSchema = new Schema<SaleDoc>({
   name: { type: String, required: true },
+  sale_by: { type: String, required: true },
   seller_id: { type: Schema.Types.ObjectId, required: false, ref: 'User', },
   media_id: { type: Schema.Types.ObjectId, ref: 'Media', required: false },
   sales: { type: Number, default: 0 },

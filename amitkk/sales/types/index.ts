@@ -5,6 +5,7 @@ import { BuyOneGetOneProps } from "@amitkk/coupon/types";
 export interface SaleProps{
     _id: string;
     name: string;
+    sale_by: string;
     seller_id?: string | UserProps;
     media_id?: string | MediaProps;
     sales: number | null;

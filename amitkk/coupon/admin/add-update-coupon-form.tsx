@@ -31,7 +31,7 @@ interface TargetSelection {
 
 const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id = "", coupon_by = "" }) => {
     const isSellerLocked = coupon_by === "Seller" || Boolean(seller_id);
-    const lockedCouponBy = isSellerLocked ? "Seller" : coupon_by;
+    const lockedBy = isSellerLocked ? "Seller" : coupon_by;
     const lockedSellerId = seller_id || "";
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +47,7 @@ const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id =
     const [formData, setFormData] = React.useState<CouponProps>({
         _id: '',
         seller_id: lockedSellerId,
-        coupon_by: lockedCouponBy,
+        coupon_by: lockedBy,
         usage_type: '',
         discount_type: '',
         discount: 0,
@@ -78,14 +78,9 @@ const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id =
     const [productTypesData, setProductTypesData] = useState<any[]>([]);
 
     const effectiveSellerId = isSellerLocked ? lockedSellerId : formData.seller_id;
-
     useEffect(() => {
         if (!isSellerLocked) return;
-        setFormData((prev) => ({
-            ...prev,
-            coupon_by: "Seller",
-            seller_id: lockedSellerId || prev.seller_id,
-        }));
+        setFormData((prev) => ({ ...prev, coupon_by: "Seller", seller_id: lockedSellerId || prev.seller_id }));
     }, [isSellerLocked, lockedSellerId]);
 
     useEffect(() => {
@@ -126,11 +121,8 @@ const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id =
             });
 
             if (res?.data) {
-                const entry = res.data.entry;
-                const fetchedSellerId =
-                    typeof entry?.seller_id === "object"
-                        ? entry?.seller_id?._id || ""
-                        : entry?.seller_id || "";
+                const entry = res?.data?.entry;
+                const fetchedSellerId = typeof entry?.seller_id === "object" ? entry?.seller_id?._id || "" : entry?.seller_id || "";
 
                 setFormData({
                     _id: entry?.id,
@@ -186,16 +178,16 @@ const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id =
         event.preventDefault();
         setIsSubmitting(true);
 
-        const finalCouponBy = isSellerLocked ? "Seller" : formData.coupon_by;
+        const finalBy = isSellerLocked ? "Seller" : formData.coupon_by;
         const finalSellerId = isSellerLocked ? lockedSellerId : String(formData.seller_id || "");
 
         try {
             const formDataToSend = new FormData();
             formDataToSend.append("function", "create_update_coupon");
             formDataToSend.append("seller_id", finalSellerId);
+            formDataToSend.append("coupon_by", finalBy);
             formDataToSend.append("path", "coupon");
             formDataToSend.append("_id", formData._id as string);
-            formDataToSend.append("coupon_by", finalCouponBy);
             formDataToSend.append("usage_type", formData.usage_type);
             formDataToSend.append("discount_type", formData.discount_type);
             formDataToSend.append("discount", String(formData.discount));
@@ -235,20 +227,18 @@ const AddUpdateCouponForm: React.FC<DataFormProps> = ({ dataId = "", seller_id =
             const res = await apiRequest("POST", `ecom/coupon`, formDataToSend);
 
             hitToastr('success', res?.message);
-            if (!dataId && res?.data?._id) {
-                router.replace(`/admin/add-update-coupon/${res.data._id}`);
-            }
+            if (!dataId && res?.data?._id) { router.replace(`${baseRoute}/${res.data._id}`); }
         } catch (error) { clo(error); } finally { setIsSubmitting(false); }
     };
 
     const title = !dataId ? 'Add Coupon' : 'Update Coupon';
-    const baseCouponRoute = isSellerLocked ? "/seller/add-update-coupon" : "/admin/add-update-coupon";
+    const baseRoute = isSellerLocked ? "/seller/add-update-coupon" : "/admin/add-update-coupon";
 
     return (
         <>
             <div className="py-3 flex items-center justify-between">
-                <h1 className="text-3xl font-bold">{dataId ? "Update Coupon" : "Add Coupon"}</h1>
-                <a href={baseCouponRoute} className="text-sm font-medium text-blue-600 hover:underline">Add New Coupon</a>
+                <h1 className="text-3xl font-bold">{title}</h1>
+                <a href={baseRoute} className="text-sm font-medium text-blue-600 hover:underline">Add New Coupon</a>
             </div>
 
             <form onSubmit={handleSubmit} style={{ padding: "10px" }} className="space-y-4">

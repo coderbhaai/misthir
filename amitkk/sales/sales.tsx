@@ -17,6 +17,7 @@ export function AdminSales() {
                     { id: "name", label: "Name" },
                     { id: "validity", label: "Validity" },
                     { id: "discount", label: "Discount" },
+                    { id: "Media", label: "Media" },
                     { id: "", label: "" },
                 ];
 

@@ -12,11 +12,16 @@ import BuyOneGetOne from 'lib/models/ecom/BuyOneGetOne';
 import { uploadMedia } from '../basic/media';
 import CartSku from 'lib/models/ecom/CartSku';
 import SaleUpsell from 'lib/models/sales/SaleUpsell';
+import { sellerFilter } from 'lib/server/plugins/sellerFilter';
+import { getSellerIdFromToken } from 'lib/services/ecomService';
 
 export async function get_filtered_sales(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { filters = {}, page = 0, limit = 10 } = req.body || {};
     const { matchQuery, skip, limit: safeLimit } = buildFilterQuery(filters, { page, limit, defaultLimit: 10, maxLimit: 100, searchableFields: ["name", "url"] });
+    const { error } = await sellerFilter(matchQuery, req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+    
     const total = await Sale.countDocuments(matchQuery);
     
     const data = await Sale.find(matchQuery).populate([ 
@@ -34,8 +39,18 @@ export async function get_single_sale(req: NextApiRequest, res: NextApiResponse)
   try{
     const id = (req.method === 'GET' ? req.query.id : req.body.id) as string;
     if (!id || !Types.ObjectId.isValid(id)) { return res.status(400).json({ message: 'Invalid or missing ID' }); }
+
+    const { seller_id } = req.body;
+    const filter: any = {};
+    filter._id = new mongoose.Types.ObjectId(id);
+    if (seller_id && mongoose.Types.ObjectId.isValid(seller_id as string)) {
+      filter.seller_id = new mongoose.Types.ObjectId(seller_id as string);
+    }
+    const { sellerId, error } = await getSellerIdFromToken(req);
+    if (error) { return res.status(error.status).json({ message: error.message }); }
+    if (sellerId) { filter.seller_id = new mongoose.Types.ObjectId(sellerId); }
   
-    const entry = await Sale.findById(id).populate([ { path: "media_id" }, { path: "seller_id", select: "_id name email phone" }, { path: "bogo_items", populate: [ { path: "buy_id", select: "_id sku name" }, { path: "get_id", select: "_id sku name" }, ] } ]).exec();
+    const entry = await Sale.findOne(filter).populate([ { path: "media_id" }, { path: "seller_id", select: "_id name email phone" }, { path: "bogo_items", populate: [ { path: "buy_id", select: "_id sku name" }, { path: "get_id", select: "_id sku name" }, ] } ]).exec();
     if (!entry) { return res.status(404).json({ message: `Sale with ID ${id} not found` }); }
   
     const targets = await SaleTarget.find({ sale_id: entry._id }).lean();
@@ -60,6 +75,7 @@ export async function create_update_sale(req: ExtendedRequest, res: NextApiRespo
     let sale: any;
 
     const payload = {
+      sale_by: data.sale_by,
       seller_id: data.seller_id,
       media_id: media_id,
       discount_type: data.discount_type,

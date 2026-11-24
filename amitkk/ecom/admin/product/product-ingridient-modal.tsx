@@ -69,7 +69,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("name", formData.name);
       formDataToSend.append("status", String(formData.status));
       formDataToSend.append("displayOrder", formData.displayOrder?.toString() || "0");
-      formDataToSend.append("path", "product");
+      formDataToSend.append("path", "product_ingridient");
 
       const mediaIdToSend = formData.media_id && typeof formData.media_id === "object" && "_id" in formData.media_id 
         ? String((formData.media_id as MediaProps)._id) : typeof formData.media_id === "string" && formData.media_id !== "null" ? formData.media_id : "";

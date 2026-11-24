@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import Media from 'lib/models/basic/Media';
 import { v4 as uuidv4 } from 'uuid';
 import mongoose, { isValidObjectId, Types } from 'mongoose';
-import MediaHub, { MediaHubProps } from 'lib/models/basic/MediaHub';
+import MediaHub from 'lib/models/basic/MediaHub';
 import type { File as FormidableFile } from "formidable";
 import { AnyModel } from 'lib/models';
 import { sanitizeText } from './dataService';
@@ -82,18 +82,19 @@ export async function uploadFileLocal( file: FormidableFile, folder: string, old
 export const getPaths = (type: string) => {
   const paths = {
     blog: { folder: 'blog', small: [150, 150], thumbnail: [300, 200] },
-    author: { folder: 'author', small: [100, 100], thumbnail: [200, 150] },
+    author: { folder: 'blog/author', small: [100, 100], thumbnail: [200, 150] },
     banner: { folder: 'banner', small: [1920, 500], thumbnail: [1920, 500] },
-    blocks: { folder: 'blocks', small: [], thumbnail: [] },
+    block: { folder: 'block', small: [], thumbnail: [] },
     page: { folder: 'page', small: [], thumbnail: [] },
-    accredition: { folder: 'medical/accredition', small: [], thumbnail: [] },
-    treatment: { folder: 'medical/treatment', small: [], thumbnail: [] },
-    treatmentType: { folder: 'medical/treatment-type', small: [], thumbnail: [] },
-    doctor: { folder: 'medical/doctor', small: [], thumbnail: [] },
-    hospital: { folder: 'medical/hospital', small: [], thumbnail: [] },
-    package: { folder: 'medical/package', small: [], thumbnail: [] },
-    product_brand: { folder: 'product/brand', small: [], thumbnail: [] },
-    product_type: { folder: 'product/type', small: [], thumbnail: [] },
+    client: { folder: 'page/client', small: [], thumbnail: [] },
+    testimonial: { folder: 'page/testimonial', small: [], thumbnail: [] },
+    product: { folder: 'product', small: [1920, 500], thumbnail: [1920, 500] },
+    product_brand: { folder: 'ecom/brand', small: [], thumbnail: [] },
+    product_meta: { folder: 'ecom/meta', small: [], thumbnail: [] },
+    product_ingridient: { folder: 'ecom/ingridient', small: [], thumbnail: [] },
+    product_feature: { folder: 'ecom/feature', small: [], thumbnail: [] },
+    sales: { folder: 'ecom/sales', small: [], thumbnail: [] },
+    coupon: { folder: 'ecom/coupon', small: [], thumbnail: [] },
     uploads: { folder: 'uploads', small: [], thumbnail: [] },
   };
   return paths[type as keyof typeof paths] ?? paths.uploads;

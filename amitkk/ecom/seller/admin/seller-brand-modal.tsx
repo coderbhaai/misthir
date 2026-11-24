@@ -120,7 +120,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("url", formData.url);
       formDataToSend.append("status", String(formData.status));
       formDataToSend.append("content", content);
-      formDataToSend.append("path", "product");
+      formDataToSend.append("path", "product_brand");
 
       const mediaIdToSend =
         formData.media_id && typeof formData.media_id === "object" && "_id" in formData.media_id

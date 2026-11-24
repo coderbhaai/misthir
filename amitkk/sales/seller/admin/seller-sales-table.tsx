@@ -1,0 +1,41 @@
+import { TableCell, TableRow } from '@amitkk/components/basic/table';
+import { SaleProps } from '@amitkk/sales/types';
+import { ActionCell } from '@amitkk/components/basic/ActionCell';
+import AdminRowActions from '@amitkk/components/admin/AdminRowActions';
+import { DateRangeDisplay } from '@amitkk/components/basic/DateRangeBadge';
+import { DiscountDisplay } from '@amitkk/coupon/static/DiscountDisplay';
+import MediaImage from '@amitkk/components/admin/table-image';
+import { MediaProps } from '@amitkk/basic/types/media';
+
+export interface DataProps extends SaleProps{
+  totalSkus: number;
+  totalProducts: number;
+}
+
+type Props = {
+  row: DataProps;
+};
+
+export function AdminDataTable({ row }: Props) {
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          {row.name}<br/>
+          Sale By - {row.sale_by}<br/>
+        </TableCell>
+        <TableCell><DateRangeDisplay validFrom={row.valid_from} validTo={row.valid_to}/></TableCell>
+        <TableCell>
+          Discount Type - {row.discount_type}<br/>
+          <DiscountDisplay type={row.discount_type} value={row.discount ?? 0} /><br/>
+          Sales - ₹{row.sales}
+        </TableCell>
+        <TableCell><MediaImage media={row.media_id as MediaProps}/></TableCell>
+        <ActionCell row={row} modelName="Sale" usePopover/>
+      </TableRow>
+      <AdminRowActions id={row._id.toString()} actions={[
+        { label: "Edit", href: `/admin/add-update-sales/${row._id}` },
+      ]}/>
+    </>
+  );
+}

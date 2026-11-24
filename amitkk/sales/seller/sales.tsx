@@ -2,10 +2,10 @@
 
 import { AdminTableLayout } from "@amitkk/basic/utils/layouts/AdminTableLayout";
 import { useAdminPage } from "hooks/useAdminPage";
-import { AdminDataTable, DataProps } from "@amitkk/ecom/seller/admin/seller-sales-table";
+import { AdminDataTable, DataProps } from "@amitkk/sales/seller/admin/seller-sales-table";
 
 export function SellerSales() {
-    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/sales", listFunction: "get_filtered_sales", addRoute: "/admin/add-update-blog" });
+    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/sales", listFunction: "get_filtered_sales", addRoute: "/seller/add-update-sales" });
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },
@@ -14,15 +14,14 @@ export function SellerSales() {
 
     const head: { id: string; label: string }[] = [
                     { id: "name", label: "Name" },
-                    { id: "media", label: "Media" },
-                    { id: "tags", label: "Tags" },
-                    { id: "author", label: "Author" },
-                    { id: "meta", label: "Meta" },
+                    { id: "validity", label: "Validity" },
+                    { id: "discount", label: "Discount" },
+                    { id: "Media", label: "Media" },
                     { id: "", label: "" },
                 ];
 
     return (
-        <AdminTableLayout admin={admin} title="Sales" filters={FILTER_CONFIG} head={head} 
+        <AdminTableLayout admin={admin} title="Sales" addButtonLabel="New Sale" filters={FILTER_CONFIG} head={head} 
             rows={admin.data.map((i: DataProps) => ( <AdminDataTable key={String(i._id)} row={i}/> ))}>
         </AdminTableLayout>
     );

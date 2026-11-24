@@ -6,6 +6,8 @@ import AdminRowActions from '@amitkk/components/admin/AdminRowActions';
 import { ActionCell } from '@amitkk/components/basic/ActionCell';
 import { DiscountDisplay } from '@amitkk/coupon/static/DiscountDisplay';
 import { DateRangeDisplay } from '@amitkk/components/basic/DateRangeBadge';
+import MediaImage from '@amitkk/components/admin/table-image';
+import { MediaProps } from '@amitkk/basic/types/media';
 
 export interface DataProps extends SaleProps{
   totalSkus: number;
@@ -21,13 +23,17 @@ export function AdminDataTable({ row }: Props) {
     <>
       <TableRow>
         <TableCell><UserRow row={row.seller_id as unknown as UserRowProps}/></TableCell>
-        <TableCell>{row.name}</TableCell>
+        <TableCell>
+          {row.name}<br/>
+          Sale By - {row.sale_by}<br/>
+        </TableCell>
         <TableCell><DateRangeDisplay validFrom={row.valid_from} validTo={row.valid_to}/></TableCell>
         <TableCell>
           Discount Type - {row.discount_type}<br/>
           <DiscountDisplay type={row.discount_type} value={row.discount ?? 0} /><br/>
           Sales - ₹{row.sales}
         </TableCell>
+        <TableCell><MediaImage media={row.media_id as MediaProps}/></TableCell>
         <ActionCell row={row} modelName="Sale" usePopover/>
       </TableRow>
 
