@@ -7,7 +7,7 @@ import { AdminDataTable } from "@amitkk/ecom/admin/product/admin-product-ingridi
 import { IngridientProps } from "@amitkk/ecom/types/product";
 
 export  function AdminIngridient(){
-    const admin =   useAdminPage<IngridientProps>({ listEndpoint: "product/basic", listFunction: "get_filtered_product_ingridients", singleFunction: "get_single_product_ingridient" });
+    const admin =   useAdminPage<IngridientProps>({ listEndpoint: "ecom/basic", listFunction: "get_filtered_product_ingridients", singleFunction: "get_single_product_ingridient" });
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },

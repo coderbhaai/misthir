@@ -39,7 +39,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
 
   const initData = React.useCallback(async () => {
     try {
-        const res_2 = await apiRequest("GET", `product/basic?function=get_product_meta_by_module&module=Type`);
+        const res_2 = await apiRequest("GET", `ecom/basic?function=get_product_meta_by_module&module=Type`);
         setProductmetaOptions(res_2?.data ?? []);
     } catch (error) { clo( error ); }
   }, []);
@@ -50,7 +50,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     if (open && selectedDataId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("GET", `product/basic?function=get_single_commission&id=${selectedDataId}`);
+          const res = await apiRequest("GET", `ecom/basic?function=get_single_commission&id=${selectedDataId}`);
   
           setFormData({
             function: 'create_update_commission',
@@ -82,7 +82,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("percentage", formData.percentage?.toString() || "0");
       formDataToSend.append("_id", selectedDataId as string);
 
-      const res = await apiRequest("POST", `product/basic`, formDataToSend);
+      const res = await apiRequest("POST", `ecom/basic`, formDataToSend);
 
       if( res?.data ){
         setFormData(initialFormData);

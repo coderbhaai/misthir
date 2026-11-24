@@ -6,8 +6,7 @@ import { AdminDataTable, DataProps } from "@amitkk/ecom/admin/product/admin-prod
 import { useAdminPage } from "hooks/useAdminPage";
 
 export function AdminProductMeta(){
-    const admin =   useAdminPage<DataProps>({
-                        listEndpoint: "product/basic", listFunction: "get_filtered_product_meta", singleFunction: "get_single_product_meta" });
+    const admin =   useAdminPage<DataProps>({ listEndpoint: "ecom/basic", listFunction: "get_filtered_product_meta", singleFunction: "get_single_product_meta" });
 
     const FILTER_CONFIG = [
         { name: "GenericFilter", grid: "col-span-3", props: { preset: "product_meta_filter" } },

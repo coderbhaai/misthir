@@ -1,4 +1,4 @@
-import { isValidObjectId, Types } from 'mongoose';
+import mongoose, { isValidObjectId, Types } from 'mongoose';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { uploadMedia } from '../basic/media';
 import Productmeta from 'lib/models/product/Productmeta';
@@ -17,6 +17,7 @@ import { APIHandlers } from 'lib/server/middleware';
 import { logError } from 'lib/services/errorService';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import { getUserModule } from 'lib/services/authService';
+import { getSellerIdFromToken } from 'lib/services/ecomService';
 
 // Productmeta
   export async function get_filtered_product_meta(req: NextApiRequest, res: NextApiResponse) {
@@ -169,6 +170,11 @@ import { getUserModule } from 'lib/services/authService';
     try {
       const { filters = {}, page = 0, limit = 10 } = req.body || {};
       const { matchQuery, skip, limit: safeLimit } = buildFilterQuery(filters, { page, limit, defaultLimit: 10, maxLimit: 100, searchableFields: ["name", "url"] });
+
+      const { sellerId, error } = await getSellerIdFromToken(req);
+      if (error) { return res.status(error.status).json({ message: error.message }); }
+      if (sellerId) { matchQuery.seller_id = new mongoose.Types.ObjectId(sellerId); }
+      
       const total = await ProductBrand.countDocuments(matchQuery);
   
       const data = await ProductBrand.find(matchQuery).populate([ { path: 'media_id' }, { path: 'meta_id' }, { path: 'seller_id' }, ]).skip(skip).limit(safeLimit).sort({ createdAt: -1 });
@@ -180,8 +186,20 @@ import { getUserModule } from 'lib/services/authService';
     try{
       const id = (req.method === 'GET' ? req.query.id : req.body.id) as string;
       if (!id || !Types.ObjectId.isValid(id)) { return res.status(400).json({ message: 'Invalid or missing ID' }); }  
+
+      const { seller_id } = req.query;
+      const filter: any = {};
+  
+      filter._id = new mongoose.Types.ObjectId(id);
+      if (seller_id && mongoose.Types.ObjectId.isValid(seller_id as string)) {
+        filter.seller_id = new mongoose.Types.ObjectId(seller_id as string);
+      }
+
+      const { sellerId, error } = await getSellerIdFromToken(req);
+      if (error) { return res.status(error.status).json({ message: error.message }); }
+      if (sellerId) { filter.seller_id = new mongoose.Types.ObjectId(sellerId); }
     
-      const entry = await ProductBrand.findById(id).populate([ { path: 'media_id' }, { path: 'meta_id' }, { path: 'seller_id' }, ]).exec();  
+      const entry = await ProductBrand.findOne(filter).populate([ { path: 'media_id' }, { path: 'meta_id' }, { path: 'seller_id' }, ]).exec();  
       if (!entry) { return res.status(404).json({ message: `ProductBrand with ID ${id} not found` }); }
     
       return res.status(200).json({ message: '✅ Single Entry Fetched', data: entry });
@@ -462,6 +480,14 @@ import { getUserModule } from 'lib/services/authService';
   }
 // Feature
 
+export async function get_my_seller_id(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const data = await getSellerIdFromToken(req);
+
+    return res.status(200).json({ message: 'Fetched all Product Feature Module', data });
+  } catch (error) { return await logError(error, { function: "get_my_seller_id", payload: req.body }); }
+}
+
 export const functions: APIHandlers = {
   get_single_seller : { middlewares: [] },
   get_user_module : { middlewares: [] },
@@ -486,7 +512,9 @@ export const functions: APIHandlers = {
   get_filtered_product_features : { middlewares: ["checkUserId", "checkPostMethod"] },
   get_single_product_feature : { middlewares: [] },
   create_update_product_feature : { middlewares: ["checkUserId", "checkPostMethod"] },
-  get_product_feature_module : { middlewares: [] },
+  get_product_feature_module : { middlewares: ["checkUserId", "checkPostMethod"] },
+
+  get_my_seller_id : { middlewares: ["checkUserId", "checkPostMethod"] },
 }
 
 export const basicHandlers = {
@@ -514,6 +542,8 @@ export const basicHandlers = {
   get_single_product_feature,
   create_update_product_feature,
   get_product_feature_module,
+
+  get_my_seller_id,
 };
 
 export const config = { api: { bodyParser: false } };

@@ -6,7 +6,7 @@ import DataModal from "@amitkk/ecom/admin/product/product-feature-modal";
 import { AdminDataTable, DataProps } from "@amitkk/ecom/admin/product/admin-product-feature-table";
 
 export  function AdminProductFeature(){
-    const admin =   useAdminPage<DataProps>({ listEndpoint: "product/basic", listFunction: "get_filtered_product_features", singleFunction: "get_single_product_feature" });
+    const admin =   useAdminPage<DataProps>({ listEndpoint: "ecom/basic", listFunction: "get_filtered_product_features", singleFunction: "get_single_product_feature" });
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },

@@ -58,7 +58,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
   useEffect(() => {
     if (open) {
       const loadParents = async () => {
-        const res = await apiRequest("GET", "product/basic?function=get_product_meta_parents");
+        const res = await apiRequest("GET", "ecom/basic?function=get_product_meta_parents");
         
         let list = res?.data || [];
         setMeta(list);
@@ -76,7 +76,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     if (open && selectedDataId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("GET", `product/basic?function=get_single_product_meta&id=${selectedDataId}`);
+          const res = await apiRequest("GET", `ecom/basic?function=get_single_product_meta&id=${selectedDataId}`);
   
           setFormData({
             module: res?.data?.module || "",
@@ -135,7 +135,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("_id", selectedDataId as string);
       if (image) { formDataToSend.append("image", image); }
 
-      const res = await apiRequest("POST", `product/basic`, formDataToSend);
+      const res = await apiRequest("POST", `ecom/basic`, formDataToSend);
 
       if( res?.data ){
         setFormData(initialFormData);

@@ -13,6 +13,7 @@ import { MediaProps } from '@amitkk/basic/types/media';
 import { TextField } from '@amitkk/components/basic/TextField';
 import SingleUserDropdown from '@amitkk/basic/admin/spatie/SingleUserDropdown';
 import StickyFormFooter from '@amitkk/components/ui/StickyFormFooter';
+import StatusDisplay from '@amitkk/components/admin/status-display-input';
 
 type DataFormProps = TableDataFormProps & {
   handleUpdate: () => Promise<void>;
@@ -25,6 +26,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     url: '',
     seller_id: '',
     status: true,
+    displayOrder: null,
     content: '',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -54,13 +56,14 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     if (open && selectedDataId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("GET", `product/basic?function=get_single_product_brand&id=${selectedDataId}`);
+          const res = await apiRequest("GET", `ecom/basic?function=get_single_product_brand&id=${selectedDataId}`);
   
           setFormData({
             name: res?.data?.name || "",
             url: res?.data?.url || "",
             content: res?.data?.content || "",
             status: res?.data?.status ?? true,
+            displayOrder: res?.data?.displayOrder ?? null,
             createdAt: res?.data?.createdAt || new Date(),
             updatedAt: new Date(),
             media_id: res?.data?.media_id || null,
@@ -102,7 +105,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("title", formData.title?.toString() ?? "");
       formDataToSend.append("description", formData.description?.toString() ?? "");
       formDataToSend.append( "meta_id", typeof formData.meta_id === "string" ? formData.meta_id : formData.meta_id?.meta_id?.toString() ?? "" );
-      const res = await apiRequest("POST", `product/basic`, formDataToSend);
+      const res = await apiRequest("POST", `ecom/basic`, formDataToSend);
 
       if( res?.data ){
         setFormData(initialFormData);
@@ -118,10 +121,10 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
   return (
     <CustomModal open={open} handleClose={handleCloseModal} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <SingleUserDropdown value={formData.seller_id} onChange={(val) => handleChange("seller_id", val)} filters={{ role: ["Seller Staff", "Seller"] }}/>
+        <SingleUserDropdown value={formData.seller_id.toString()} onChange={(val) => handleChange("seller_id", val)} filters={{ role: ["Seller Staff", "Seller"] }}/>
         <TextField label="Brand Name" value={formData.name} name="name" onChange={handleChange} required/>
         <TextField label="URL" value={formData.url} name="url" onChange={handleChange} required/>
-        <StatusSelect value={formData.status} onChange={(value) => handleChange("status", value)}/>
+        <StatusDisplay statusValue={formData.status} displayOrderValue={formData.displayOrder} onStatusChange={(value) => setFormData((prev) => ({...prev, status: value}))} onDisplayOrderChange={(value) => setFormData((prev) => ({...prev, displayOrder: value}))}/>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <MediaImage media={formData.media_id as MediaProps} style={{ marginRight: "10px", width: "120px", height: "70px" }}/>
           <ImageUpload name="image" label="Upload Image" required={!selectedDataId} error={imageError} onChange={(name, file) => { setImage(file); }}/>

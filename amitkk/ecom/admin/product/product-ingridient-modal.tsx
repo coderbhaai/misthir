@@ -40,7 +40,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     if (open && selectedDataId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("GET", `product/basic?function=get_single_product_ingridient&id=${selectedDataId}`);
+          const res = await apiRequest("GET", `ecom/basic?function=get_single_product_ingridient&id=${selectedDataId}`);
   
           setFormData({
             _id: res?.data?._id || "",
@@ -78,7 +78,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("_id", selectedDataId as string);
       if (image) { formDataToSend.append("image", image); }
 
-      const res = await apiRequest("POST", `product/basic`, formDataToSend);
+      const res = await apiRequest("POST", `ecom/basic`, formDataToSend);
 
       if( res?.data ){
         setFormData(initialFormData);

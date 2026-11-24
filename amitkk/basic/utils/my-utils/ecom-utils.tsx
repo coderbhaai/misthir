@@ -1,4 +1,5 @@
 import { ProductFeatureProps, SkuProductFeatureRelationItem } from "@amitkk/ecom/types/product";
+import { apiRequest } from "./admin-utils";
 
 export function extractFeatureValues<K extends keyof ProductFeatureProps>(
   inputArray: (SkuProductFeatureRelationItem | ProductFeatureProps | string)[] | undefined | null, 
@@ -78,3 +79,21 @@ export function filterAndExtractFeatures<T = string>(
     })
     .filter((val): val is T => val !== null && val !== undefined && (typeof val !== "string" || val.length > 0));
 }
+
+export interface SellerDataResult {
+  seller_id: string | null;
+  error: { status: number; message: string } | null;
+}
+
+export const getSellerId = async (): Promise<SellerDataResult> => {
+  const res = await apiRequest("POST", "ecom/basic", {
+    function: "get_my_seller_id",
+  });
+
+  const payload = res?.data;
+
+  return {
+    seller_id: payload?.sellerId ?? payload?.seller_id ?? null,
+    error: payload?.error ?? null,
+  };
+};

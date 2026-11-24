@@ -7,7 +7,6 @@ import MetaInput from "@amitkk/components/admin/meta-input";
 import MultiSelectDropdown from "@amitkk/components/admin/multiselect-dropdown";
 import { apiRequest, clo, handleMultiSelectChange, hitToastr } from "@amitkk/basic/utils/my-utils/admin-utils";
 import { SingleProductItemProps } from "@amitkk/ecom/types/product";
-import { useSellerId } from "hooks/useSellerId";
 import StatusSelect from "@amitkk/components/admin/status-input";
 import SkuModal from "@amitkk/ecom/admin/product/SkuModal";
 import GenericSelect from "@amitkk/components/admin/generic-select";
@@ -38,7 +37,6 @@ export const AdminProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
   const { can } = useAuth();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const seller_id = useSellerId();
     const mediaPanelRef = useRef<MediaPanelHandle>(null);
     
     const [formData, setFormData] = React.useState<DataProps>({
@@ -87,7 +85,7 @@ export const AdminProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
     const [selectedMediaIds, setSelectedMediaIds] = useState<any[]>([]);
 
     const fetchSingleEntry = useCallback(async () => {
-      if (!dataId || !seller_id) return;
+      if (!dataId) return;
 
       try {
           const res = await apiRequest("GET", `ecom/product?function=get_single_product&id=${dataId}`);
@@ -129,17 +127,14 @@ export const AdminProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
       } catch (error) { 
           clo(error); 
       }
-  }, [dataId, seller_id]);
+  }, [dataId]);
 
-    useEffect(() => { fetchSingleEntry(); }, [dataId, seller_id]);
+    useEffect(() => { fetchSingleEntry(); }, [dataId]);
 
-    const initData = useCallback(async () => {
-        if (!seller_id) return;
-        
+    const initData = useCallback(async () => {        
         try {
           const res_1 = await apiRequest("POST", `ecom/product`,{
             function: "get_product_modules",
-            seller_id
           });
 
           setCategory(res_1?.data?.category ?? []);
@@ -150,8 +145,7 @@ export const AdminProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
           setStorage(res_1?.data?.storage ?? []);
           setTaxOptions(res_1?.data?.tax ?? []);
         } catch (error) { clo( error ); }
-    }, [seller_id]);
-
+    }, []);
     useEffect(() => { initData(); }, [initData]);
       
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -173,7 +167,7 @@ export const AdminProductForm: React.FC<DataFormProps> = ({ dataId = "" }) => {
         try {
             const formDataToSend = new FormData();
             formDataToSend.append("function", "create_update_product");
-            formDataToSend.append("seller_id", (formData.seller_id || seller_id) as string);
+            formDataToSend.append("seller_id", (formData.seller_id) as string);
             formDataToSend.append("path", "product");
             formDataToSend.append("module", "Product");
             formDataToSend.append("_id", formData._id);

@@ -7,7 +7,7 @@ import { AdminDataTable } from "@amitkk/ecom/seller/admin/seller-product-brand-t
 import { DataProps } from "@amitkk/ecom/admin/product/admin-product-brand-table";
 
 export  function AdminProductBrand(){
-    const admin =   useAdminPage<DataProps>({ listEndpoint: "product/basic", listFunction: "get_filtered_product_brands", singleFunction: "get_single_product_brand" });
+    const admin =   useAdminPage<DataProps>({ listEndpoint: "ecom/basic", listFunction: "get_filtered_product_brands", singleFunction: "get_single_product_brand" });
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },
@@ -17,8 +17,6 @@ export  function AdminProductBrand(){
     const head: { id: string; label: string }[] = [
                     { id: "name", label: "Name" },
                     { id: "media", label: "Media" },
-                    { id: "status", label: "Status" },
-                    { id: "date", label: "Date" },
                     { id: "", label: "" },
                 ];
     

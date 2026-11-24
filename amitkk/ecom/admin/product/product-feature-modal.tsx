@@ -52,7 +52,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
     if (open && selectedDataId) {
       const fetchData = async () => {
         try {
-          const res = await apiRequest("GET", `product/basic?function=get_single_product_feature&id=${selectedDataId}`);
+          const res = await apiRequest("GET", `ecom/basic?function=get_single_product_feature&id=${selectedDataId}`);
   
           setFormData({
             _id: res?.data?._id || "",
@@ -100,7 +100,7 @@ export default function DataModal({ open, handleClose, selectedDataId, handleUpd
       formDataToSend.append("description", formData.description?.toString() ?? "");
       formDataToSend.append( "meta_id", typeof formData.meta_id === "string" ? formData.meta_id : formData.meta_id?.meta_id?.toString() ?? "" );
 
-      const res = await apiRequest("POST", `product/basic`, formDataToSend);
+      const res = await apiRequest("POST", `ecom/basic`, formDataToSend);
 
       if( res?.data ){
         setFormData(initialFormData);

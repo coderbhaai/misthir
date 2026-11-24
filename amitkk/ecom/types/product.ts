@@ -2,6 +2,7 @@ import { ArrayProps } from "@amitkk/basic/types";
 import { ModuleProps } from "@amitkk/basic/types/generic";
 import { MediaHubProps, MediaProps } from "@amitkk/basic/types/media";
 import { MetaProps } from "@amitkk/basic/types/shared";
+import { UserProps } from "@amitkk/basic/types/user";
 import { MetaTableProps } from "@amitkk/seo/types";
 
 export interface ProductMetaProps {
@@ -55,7 +56,7 @@ export interface ProductBrandProps {
     content?: string;
     createdAt: Date;
     updatedAt: Date;
-    seller_id: string | null;
+    seller_id: string | UserProps;
     media_id: string | MediaProps;
     meta_id: string | MetaTableProps; 
 }
