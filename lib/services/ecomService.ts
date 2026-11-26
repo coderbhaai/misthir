@@ -401,10 +401,10 @@ export async function computeExpiry(validityValue: number, unit: string): Promis
 
 // CART CALUCLAUTIONS
   export async function cartCheck(cart_id: string) {
-    await syncCartDiscountsAndCharges(cart_id);
-    await handleApplyCoupon(cart_id);
-    await recalculateCart(cart_id);
-  }
+  await syncCartDiscountsAndCharges(cart_id);
+  await handleApplyCoupon(cart_id, undefined, { logUsage: false });
+  await recalculateCart(cart_id);
+}
 
   export async function syncCartDiscountsAndCharges(cart_id: string | any) {
     try {

@@ -16,7 +16,7 @@ import { getCartIdFromRequest } from '../cartUtils';
 import { escapeRegExp } from 'lib/services/dataService';
 import { cartCheck, getSellerIdFromToken } from 'lib/services/ecomService';
 import { sellerFilter } from 'lib/server/plugins/sellerFilter';
-import { remove_coupon } from 'lib/services/couponService';
+import { handleApplyCoupon, remove_coupon } from 'lib/services/couponService';
 
 export async function get_filtered_coupon(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -278,12 +278,21 @@ export async function apply_coupon(req: NextApiRequest, res: NextApiResponse) {
     const cart_id = await getCartIdFromRequest(req, res);
     if (!cart_id) { return res.status(400).json({ status: false, message: "Cart not found", data: null }); }
 
-    const { coupon_code } = req.body;
-    if (!coupon_code) { return res.status(400).json({ status: false, message: "Coupon code is required", data: null }); }
+    const { coupon_code } = req.body ?? {};
+    if (!coupon_code) {
+      await remove_coupon(cart_id);
+      await cartCheck(cart_id);
+      return res.status(400).json({ status: false, message: "Coupon code is required", data: null });
+    }
 
-    await cartCheck(cart_id);
-    return res.status(200).json({ status: true, message: "Coupon Applied succesfully", data: null });
-  } catch (error) { await logError(error, { function: "apply_coupon", payload: req.body }); }
+    const result = await handleApplyCoupon(cart_id, coupon_code, { logUsage: true });
+    if (result?.success) { await cartCheck(cart_id); }
+
+    return res.status(200).json({ status: Boolean(result?.success), message: result?.message, data: null });
+  } catch (error) {
+    await logError(error, { function: "apply_coupon", payload: req.body });
+    return res.status(500).json({ status: false, message: "Internal Server Error", data: null });
+  }
 }
 
 export const functions: APIHandlers = {
