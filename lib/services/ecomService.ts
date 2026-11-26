@@ -17,6 +17,7 @@ import CartSku, { CartSkuDoc } from "lib/models/ecom/CartSku";
 import CartSkuDetail from "lib/models/ecom/CartSkuDetail";
 import CartSkuDiscount from "lib/models/ecom/CartSkuDiscount";
 import { handleApplyCoupon, syncCartCouponSuggestions } from "./couponService";
+import { syncSellerCartCharges } from "./sellerService";
 
 export interface SellerResolveResult {
   sellerId: string | null;
@@ -401,11 +402,12 @@ export async function computeExpiry(validityValue: number, unit: string): Promis
 
 // CART CALUCLAUTIONS
   export async function cartCheck(cart_id: string) {
-  await syncCartDiscountsAndCharges(cart_id);
-  await handleApplyCoupon(cart_id, undefined, { logUsage: false });
-  await syncCartCouponSuggestions(cart_id);
-  await recalculateCart(cart_id);
-}
+    await syncCartDiscountsAndCharges(cart_id);
+    await handleApplyCoupon(cart_id, undefined, { logUsage: false });
+    await syncCartCouponSuggestions(cart_id);
+    await syncSellerCartCharges(cart_id);
+    await recalculateCart(cart_id);
+  }
 
   export async function syncCartDiscountsAndCharges(cart_id: string | any) {
     try {
@@ -575,6 +577,7 @@ export async function computeExpiry(validityValue: number, unit: string): Promis
       { path: "cartCoupon" },
       { path: "cartCharges" },
       { path: 'cartConsent' },
+      { path: 'cartSellerCharges' },
       { path: "couponSuggestions" },
       { path: 'billing_address_id' }, { path: 'shipping_address_id' }, 
       { path: "cartSkus", populate: [

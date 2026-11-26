@@ -124,12 +124,7 @@ export const SellerSingleAbandonedCart: React.FC<DataFormProps> = ({ dataId = ""
           <SkuItemList items={cart?.cartSkus ?? []} seller_id={seller_id} />
           <CouponForm coupon_code={cart?.cartCoupon?.coupon_code} allowed={false} />
           <CartCharges cart={cart} seller_id={seller_id} isSellerView />
-          <Button
-            className="w-full bg-black text-white hover:bg-black/90 py-5"
-            onClick={() => setOpenDiscountModal(true)}
-          >
-            Give Additional Discount
-          </Button>
+          <Button className="w-full bg-black text-white hover:bg-black/90 py-5" onClick={() => setOpenDiscountModal(true)}>Give Additional Discount</Button>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
+"use client";
+
 import React from "react";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Label } from "./label";
+import { Check } from "lucide-react";
 
 interface RadioOption {
   label: string;
@@ -16,18 +17,40 @@ interface BooleanRadioGroupProps {
 
 export function BooleanRadioGroup({ value, onChange, options, name }: BooleanRadioGroupProps) {
   return (
-    <RadioGroup value={value.toString()} onValueChange={(val) => onChange(val === "true")} name={name} className="space-y-2">
+    <div role="radiogroup" aria-label={name} className="space-y-2">
       {options.map((option) => {
-        const strVal = option.value.toString();
-        const id = `${name || "radio"}-${strVal}`;
+        const isSelected = Boolean(value) === Boolean(option.value);
+        const key = String(option.value);
 
         return (
-          <div key={strVal} className="flex items-center space-x-2 cursor-pointer">
-            <RadioGroupItem value={strVal} id={id} className="border-2 border-gray-400 data-[state=checked]:border-primary data-[state=checked]:text-primary"/>
-            <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-foreground">{option.label}</Label>
+          <div
+            key={key}
+            role="radio"
+            aria-checked={isSelected}
+            tabIndex={0}
+            onClick={() => onChange(option.value)}
+            onKeyDown={(e) => {
+              if (e.key === " " || e.key === "Enter") {
+                e.preventDefault();
+                onChange(option.value);
+              }
+            }}
+            className="flex items-center space-x-2.5 cursor-pointer select-none"
+          >
+            <div
+              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                isSelected
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-gray-400 dark:border-gray-500 bg-background hover:border-primary"
+              }`}
+            >
+              {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+            </div>
+
+            <span className="text-sm font-medium text-foreground">{option.label}</span>
           </div>
         );
       })}
-    </RadioGroup>
+    </div>
   );
 }

@@ -143,7 +143,6 @@ export async function update_cart_array(req: NextApiRequest, res: NextApiRespons
     if (!cart) { return res.status(400).json({ status: false, message: 'Cart not found' }); }
     
     const { email, phone, emailConsent, phoneConsent, ...cartUpdates } = update;
-
     for (const [key, value] of Object.entries(cartUpdates)) {
       cart.set(key, value);
     }
@@ -175,6 +174,7 @@ export async function update_cart_array(req: NextApiRequest, res: NextApiRespons
       { upsert: true, new: true }
     );
 
+    await cartCheck(cart_id);
     return res.status(200).json({ status: true, message: "Cart Updated" });
   } catch (error) { 
     return await logError(error, { function: "update_cart_array", payload: req.body }); 

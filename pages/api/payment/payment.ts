@@ -15,7 +15,7 @@ import { getPopulatedCartQuery } from 'lib/services/ecomService';
     try {
       const data = await SiteSetting.find().exec();
       return res.status(200).json({ message: 'Fetched all Settings', data });
-    } catch (error) { await logError(error, { function: "get_filtered_country", payload: req.body }); }
+    } catch (error) { await logError(error, { function: "get_all_settings", payload: req.body }); }
   }
 
   export async function get_single_setting(req: NextApiRequest, res: NextApiResponse){
@@ -28,7 +28,7 @@ import { getPopulatedCartQuery } from 'lib/services/ecomService';
     
       return res.status(200).json({ message: '✅ Single Entry Fetched', data: entry });
 
-    }catch (error) { await logError(error, { function: "get_filtered_country", payload: req.body }); }
+    }catch (error) { await logError(error, { function: "get_single_setting", payload: req.body }); }
   };
 
   export async function create_update_setting(req: ExtendedRequest, res: NextApiResponse) {
@@ -45,14 +45,14 @@ import { getPopulatedCartQuery } from 'lib/services/ecomService';
       );
 
       return res.status(200).json({ message: '✅ Entry updated successfully', data: entry });
-    } catch (error) { await logError(error, { function: "get_filtered_country", payload: req.body }); }
+    } catch (error) { await logError(error, { function: "create_update_setting", payload: req.body }); }
   }
 
   export async function get_site_settings(req: NextApiRequest, res: NextApiResponse) {
     try {
       const data = await SiteSetting.find({ status: 1 }).exec();
       return res.status(200).json({ message: 'Fetched all Settings', data });
-    } catch (error) { await logError(error, { function: "get_filtered_country", payload: req.body }); }
+    } catch (error) { await logError(error, { function: "get_site_settings", payload: req.body }); }
   }
 // SiteSetting
 

@@ -16,8 +16,9 @@ type AddressSelectionDropdownProps = {
 };
 
 export default function AddressSelectionDropdown({ addressOptions = [], selectedAddressId = "", onSelect, onEdit, onAddAddress, label = "Select Address", addButtonLabel = "Create Address" }: AddressSelectionDropdownProps) {
-  const isValid = addressOptions.some((a) => a._id === selectedAddressId);
-  const safeValue = isValid ? selectedAddressId : "";
+  const selectedIdStr = String(selectedAddressId ?? "");
+  const isValid = addressOptions.some((a) => String(a._id) === selectedIdStr);
+  const safeValue = isValid ? selectedIdStr : "";
 
   return (
     <div className="w-full my-4 space-y-3">

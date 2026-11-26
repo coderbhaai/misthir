@@ -124,6 +124,46 @@ function getActiveAdminDiscountAmount(
     : 0;
 }
 
+function getSellerChargesList(cart: any): any[] {
+  const list = getProp(cart, "cartSellerCharges", getProp(cart, "sellerCharges", []));
+  return Array.isArray(list) ? list : [];
+}
+
+function getSellerChargeRecord(cart: any, targetSellerId: string) {
+  if (!targetSellerId) return null;
+  const sellerChargesList = getSellerChargesList(cart);
+  return (
+    sellerChargesList.find((entry) => getId(entry?.seller_id) === targetSellerId) ??
+    null
+  );
+}
+
+function resolveCombinedSellerCharges(
+  sellerChargesList: any[],
+  charges: any
+): { shipping: number; cod: number } {
+  if (sellerChargesList.length > 0) {
+    const sum = sellerChargesList.reduce(
+      (acc, entry) => {
+        acc.shipping += Number(entry?.shipping_charges ?? 0);
+        acc.cod += Number(entry?.cod_charges ?? 0);
+        return acc;
+      },
+      { shipping: 0, cod: 0 }
+    );
+
+    return {
+      shipping: Number(sum.shipping.toFixed(2)),
+      cod: Number(sum.cod.toFixed(2)),
+    };
+  }
+
+  return {
+    shipping: Number((charges?.shipping_charges ?? 0).toFixed(2)),
+    cod: Number((charges?.cod_charges ?? 0).toFixed(2)),
+  };
+}
+
 interface CartChargesProps {
   cart?: CartProps | OrderProps;
   cart_status?: boolean;
@@ -139,9 +179,10 @@ export default function CartCharges({
 }: CartChargesProps) {
   const allSkus: any[] = getProp(cart, "cartSkus", getProp(cart, "orderSkus", []));
   const targetSellerId = seller_id ? String(seller_id) : "";
-  const hideAdminDiscount = Boolean(targetSellerId) || Boolean(isSellerView);
+  const isScopedToSeller = Boolean(targetSellerId);
+  const hideAdminDiscount = isScopedToSeller || Boolean(isSellerView);
 
-  const skus = targetSellerId
+  const skus = isScopedToSeller
     ? allSkus.filter((item) => getSkuSellerId(item) === targetSellerId)
     : allSkus;
 
@@ -169,16 +210,29 @@ export default function CartCharges({
   }
 
   const charges: any = getProp(cart, "cartCharges", getProp(cart, "orderCharges", null));
+  const sellerChargesList = getSellerChargesList(cart);
+  const sellerChargeRecord: any = getSellerChargeRecord(cart, targetSellerId);
+  const combinedCharges = resolveCombinedSellerCharges(sellerChargesList, charges);
   const coupon: any = getProp(cart, "cartCoupon", null);
 
   const subtotal = Number(rawSubtotal.toFixed(2));
   const roundedSkuDiscount = Number(skuDiscountSum.toFixed(2));
 
-  const shippingCharges = hideAdminDiscount ? 0 : Number(charges?.shipping_charges ?? 0);
-  const codCharges = hideAdminDiscount ? 0 : Number(charges?.cod_charges ?? 0);
+  const shippingCharges = isScopedToSeller
+    ? Number((sellerChargeRecord?.shipping_charges ?? 0).toFixed(2))
+    : isSellerView
+    ? 0
+    : combinedCharges.shipping;
+
+  const codCharges = isScopedToSeller
+    ? Number((sellerChargeRecord?.cod_charges ?? 0).toFixed(2))
+    : isSellerView
+    ? 0
+    : combinedCharges.cod;
+
   const salesDiscount = hideAdminDiscount ? 0 : Number(charges?.sales_discount ?? 0);
 
-  const totalCouponDiscount = targetSellerId
+  const totalCouponDiscount = isScopedToSeller
     ? Number(coupon?.seller_coupon_discount ?? 0)
     : Number(coupon?.admin_coupon_discount ?? 0) +
       Number(coupon?.seller_coupon_discount ?? 0);
@@ -186,7 +240,7 @@ export default function CartCharges({
   const sellerDiscountTotal =
     roundedSkuDiscount > 0
       ? roundedSkuDiscount
-      : targetSellerId
+      : isScopedToSeller
       ? Number(charges?.seller_discount ?? 0)
       : Number(charges?.total_seller_discount ?? charges?.seller_discount ?? 0);
 
@@ -212,6 +266,9 @@ export default function CartCharges({
     )
   );
 
+  const hasAnyChargeBreakdown =
+    Boolean(charges) || Boolean(sellerChargeRecord) || sellerChargesList.length > 0;
+
   return (
     <>
       <Separator className="my-4" />
@@ -220,17 +277,22 @@ export default function CartCharges({
         <span>₹{subtotal}</span>
       </div>
 
-      {charges && (
+      {hasAnyChargeBreakdown && (
         <>
-          {!hideAdminDiscount && (
+          {(!hideAdminDiscount || isScopedToSeller) && (
             <>
-              <ChargeRow label="Shipping Charges (Inc)" value={shippingCharges} />
-              <ChargeRow label="COD Charges (Inc)" value={codCharges} />
-              <ChargeRow label="Sales Discount" value={salesDiscount} />
+              <ChargeRow label="Shipping Charges" value={shippingCharges} />
+              <ChargeRow label="COD Charges" value={codCharges} />
             </>
           )}
+
+          {!hideAdminDiscount && (
+            <ChargeRow label="Sales Discount" value={salesDiscount} />
+          )}
+
           <ChargeRow label="Coupon Discount" value={totalCouponDiscount} />
           <ChargeRow label="Seller Discount" value={sellerDiscountTotal} />
+
           {!hideAdminDiscount && (
             <ChargeRow label="Admin Discount" value={adminDiscountTotal} />
           )}

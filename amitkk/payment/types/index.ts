@@ -1,3 +1,5 @@
+import { UserProps } from "@amitkk/basic/types/user";
+
 export type TaxProps = {
   _id: string;
   name: string;
@@ -28,6 +30,16 @@ export type TaxCollectedProps = {
 
 export type SiteSettingProps = {
   _id: string;
+  module: string;
+  module_value: string;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type SellerSiteSettingProps = {
+  _id: string;
+  seller_id: string | UserProps;
   module: string;
   module_value: string;
   status: boolean;

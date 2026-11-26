@@ -32,5 +32,6 @@ cartSchema.virtual('cartCharges', { ref: 'CartCharges', localField: '_id', forei
 cartSchema.virtual('cartCoupon', { ref: 'CartCoupon', localField: '_id', foreignField: 'cart_id', justOne: true });
 cartSchema.virtual('cartConsent', { ref: 'CartConsent', localField: '_id', foreignField: 'cart_id', justOne: true });
 cartSchema.virtual("couponSuggestions", { ref: "CartCouponSuggestion", localField: "_id", foreignField: "cart_id", justOne: false });
+cartSchema.virtual("cartSellerCharges", { ref: "CartSellerCharges", localField: "_id", foreignField: "cart_id", justOne: false });
 
 export default mongoose.models.Cart || mongoose.model<CartDoc>("Cart", cartSchema);

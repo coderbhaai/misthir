@@ -18,6 +18,7 @@ import CreateUpdateAddressModal from "@amitkk/address/static/create-address-moda
 import ContactInfoSection from "@amitkk/ecom/static/ContactInfoSection";
 import { makePayment } from "@amitkk/payment/utils/utils";
 import PaymentStatic from "@amitkk/ecom/static/PaymentStatic";
+import { getProp } from "@amitkk/basic/utils/my-utils/shared-utils";
 
 export default function CheckoutPage() {
   const { fetchCart, sendAction, cart, relatedProducts } = useEcom();
@@ -40,6 +41,14 @@ export default function CheckoutPage() {
   const [emailConsent, setEmailConsent] = useState<boolean>(false);
   const [phoneConsent, setPhoneConsent] = useState<boolean>(false);
 
+  const resolveAddressId = (value: unknown): string => {
+    if (typeof value === "string") {
+      return value === "[object Object]" ? "" : value;
+    }
+    const id = getProp<{ _id?: unknown }>(value, "_id", "");
+    return id && String(id) !== "[object Object]" ? String(id) : "";
+  };
+
   const updateCartDetails = useCallback(
     (overrides: Partial<{
       paymode: string;
@@ -52,6 +61,9 @@ export default function CheckoutPage() {
       emailConsent: boolean;
       phoneConsent: boolean;
     }> = {}) => {
+
+      const nextShipping = overrides.shipping_address_id !== undefined ? resolveAddressId(overrides.shipping_address_id) : resolveAddressId(shipping_address_id);
+      const nextBilling = overrides.billing_address_id !== undefined ? resolveAddressId(overrides.billing_address_id) : resolveAddressId(billing_address_id);
       sendAction("update_cart_array", {
         action: "update_cart_array",
         update: {
@@ -59,8 +71,8 @@ export default function CheckoutPage() {
           emailConsent: overrides.emailConsent ?? emailConsent,
           phoneConsent: overrides.phoneConsent ?? phoneConsent,
           paymode: overrides.paymode ?? paymode,
-          shipping_address_id: overrides.shipping_address_id !== undefined ? overrides.shipping_address_id : (shipping_address_id || null),
-          billing_address_id: overrides.billing_address_id !== undefined ? overrides.billing_address_id : (billing_address_id || null),
+          shipping_address_id: nextShipping || null,
+          billing_address_id: nextBilling || null,
           user_remarks: overrides.user_remarks ?? orderNote,
         },
       });
@@ -82,20 +94,20 @@ export default function CheckoutPage() {
 
   useEffect(() => { fetchAddresses(); }, [fetchAddresses]);
 
-  function syncAddresses() {
-    fetchAddresses();
+  const syncAddresses = useCallback(() => {
     if (!cart) return;
 
-    const shippingId = String(cart.shipping_address_id) ?? "";
-    const billingId = String(cart.billing_address_id) ?? "";
+    const shippingId = resolveAddressId(cart.shipping_address_id);
+    const billingId = resolveAddressId(cart.billing_address_id);
     const isSame = Boolean(shippingId && billingId && shippingId === billingId);
+
     if (!isTogglingRef.current) {
       setSameAsShipping(isSame);
     }
-    
+
     setShippingAddressId(shippingId);
-    setBillingAddressId(isSame ? shippingId : billingId);
-  }
+    setBillingAddressId(billingId || (isSame ? shippingId : ""));
+  }, [cart]);
 
   useEffect(() => {
     if (!cart) return;
@@ -112,9 +124,9 @@ export default function CheckoutPage() {
   }
 
   function updateCartBillingAddress(addressId: string) {
-    const value = addressId === "" ? null : addressId;
-    updateCartDetails({ billing_address_id: value });
-    syncAddresses();
+    const cleanId = resolveAddressId(addressId);
+    setBillingAddressId(cleanId);
+    updateCartDetails({ billing_address_id: cleanId || null });
   }
 
   const handleCloseModal = () => {
@@ -291,40 +303,52 @@ export default function CheckoutPage() {
               <ContactInfoSection email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} emailConsent={emailConsent} phoneConsent={phoneConsent} onBlur={syncAddressContactInfo} setEmailConsent={(val) => { setEmailConsent(val); updateCartDetails({ emailConsent: val }); }} setPhoneConsent={(val) => { setPhoneConsent(val); updateCartDetails({ phoneConsent: val }); }}/>
             </div>
 
-            <AddressSelectionDropdown label="Select Delivery Address" addressOptions={addressOptions} selectedAddressId={shipping_address_id} onSelect={(id) => { setShippingAddressId(id); updateCartShippingAddress(id); }} onEdit={(id) => handleOpenAddressModal("shipping", id)} onAddAddress={() => handleOpenAddressModal("shipping")} />
+              <AddressSelectionDropdown label="Select Delivery Address" addressOptions={addressOptions} selectedAddressId={shipping_address_id} onSelect={(id) => {
+                setShippingAddressId(id); updateCartShippingAddress(id);
+                }} onEdit={(id) => handleOpenAddressModal("shipping", id)} onAddAddress={() => handleOpenAddressModal("shipping")} />
 
-            <div className="pt-2">
-              <div className="space-y-2">
-                <BooleanRadioGroup name="billing_option" value={same_as_shipping} options={[ { label: "Same as shipping address", value: true }, { label: "Use a different billing address", value: false } ]}
-                  onChange={(val) => {
-                    isTogglingRef.current = true;
-                    setSameAsShipping(val);
+              <div className="pt-2">
+                <div className="space-y-2">
+                  <BooleanRadioGroup name="billing_option" value={same_as_shipping}
+                    options={[ { label: "Same as shipping address", value: true }, { label: "Use a different billing address", value: false } ]}
+                    onChange={(val) => {
+                      isTogglingRef.current = true;
+                      setSameAsShipping(val);
 
-                    const targetBillingId = val ? shipping_address_id : billing_address_id;
-                    if (val) { setBillingAddressId(shipping_address_id); }
+                      const cleanShippingId = resolveAddressId(shipping_address_id);
+                      const cleanBillingId = val ? cleanShippingId : resolveAddressId(billing_address_id);
+                      if (val) { setBillingAddressId(cleanShippingId); }
 
-                    sendAction("update_cart_array", {
-                      action: "update_cart_array",
-                      update: {
-                        paymode: paymode,
-                        shipping_address_id: shipping_address_id || null,
-                        billing_address_id: targetBillingId || null,
-                        user_remarks: orderNote,
-                        email, phone, emailConsent, phoneConsent,
-                      },
-                    });
+                      sendAction("update_cart_array", {
+                        action: "update_cart_array",
+                        update: {
+                          paymode: paymode,
+                          shipping_address_id: cleanShippingId || null,
+                          billing_address_id: cleanBillingId || null,
+                          user_remarks: orderNote,
+                          email,
+                          phone,
+                          emailConsent,
+                          phoneConsent,
+                        },
+                      });
 
-                    setTimeout(() => {
-                      isTogglingRef.current = false;
-                    }, 1000);
-                  }}/>
-              </div>
-
-              {!same_as_shipping && (
-                <div className="mt-4 pt-4 border-t border-border space-y-3">
-                  <AddressSelectionDropdown label="Select Billing Address" addressOptions={addressOptions} selectedAddressId={billing_address_id} onSelect={(id) => { setBillingAddressId(id); updateCartBillingAddress(id); }} onEdit={(id) => handleOpenAddressModal("billing", id)} onAddAddress={() => handleOpenAddressModal("billing")}/>
+                      setTimeout(() => { isTogglingRef.current = false; }, 1000);
+                    }}/>
                 </div>
-              )}
+
+                {!same_as_shipping && (
+  <div className="mt-4 pt-4 border-t border-border space-y-3">
+    <AddressSelectionDropdown
+      label="Select Billing Address"
+      addressOptions={addressOptions}
+      selectedAddressId={billing_address_id}
+      onSelect={(id) => updateCartBillingAddress(id)}
+      onEdit={(id) => handleOpenAddressModal("billing", id)}
+      onAddAddress={() => handleOpenAddressModal("billing")}
+    />
+  </div>
+)}
             </div>
 
             <div className="space-y-4 pt-2">
