@@ -447,7 +447,6 @@ export async function get_single_product_by_url(req: NextApiRequest, res: NextAp
     if (!data) { return res.status(404).json({ message: `Product  with URL ${url} not found` }); }
 
     const relatedContent = await getRelatedContent({ module: "Product", moduleId: data._id.toString() });
-
     const reviews = await getReviews({ module: "Product", moduleId: data._id.toString() });
     
     return res.status(200).json({ message: 'Fetched Single Product', data, relatedContent, reviews });

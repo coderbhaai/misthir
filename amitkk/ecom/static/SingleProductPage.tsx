@@ -11,7 +11,6 @@ import { RelatedContent, ReviewProps } from "@amitkk/basic/types";
 import { Button } from "@amitkk/components/button/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@amitkk/components/ui/badge";
-import ReviewPanel from "@amitkk/basic/admin/review/ReviewPanel";
 import { SingleProductItemProps, SkuProps } from "../types/product";
 import { getProp } from "@amitkk/basic/utils/my-utils/shared-utils";
 import ProductImageGallery from "@amitkk/basic/admin/media/ProductImageGallery";
@@ -22,6 +21,7 @@ import { useWishlist } from "contexts/WishlistContext";
 import OrderGuideModal from "@amitkk/wishlist/static/OrderGuideModal";
 import { useAuth } from "contexts/AuthContext";
 import { apiRequest, hitToastr } from "@amitkk/basic/utils/my-utils/admin-utils";
+import ReviewPanel from "@amitkk/reviews/static/ReviewPanel";
 
 interface ProductPageProps {
   product: SingleProductItemProps;
@@ -258,7 +258,7 @@ export default function SingleProductPage({ product, relatedContent, reviews }: 
       <FaqPanel faq={relatedContent.faq} />
       <SuggestTestimonial testimonials={relatedContent.testimonials} />
 
-      <ReviewPanel reviews={reviews} module="Product" module_id={product?._id} />
+      <ReviewPanel reviews={reviews} module="Product" module_id={product?._id}/>
       <SuggestProducts data={relatedContent.products} />
       <SuggestBlogs data={relatedContent.blogs} />
 

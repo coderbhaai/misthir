@@ -36,10 +36,10 @@ export const getPaths = (type: string) => {
     banner: { folder: 'banner', small: [1920, 500], thumbnail: [1920, 500] },
     blocks: { folder: 'blocks', small: [], thumbnail: [] },
     product: { folder: 'product', small: [], thumbnail: [] },
+    review: { folder: 'review', small: [], thumbnail: [] },
     product_brand: { folder: 'product/brand', small: [], thumbnail: [] },
     product_meta: { folder: 'product/meta', small: [], thumbnail: [] },
     product_type: { folder: 'product/type', small: [], thumbnail: [] },
-    review: { folder: 'review', small: [], thumbnail: [] },
     uploads: { folder: 'uploads', small: [], thumbnail: [] },
   };
   return paths[type as keyof typeof paths] ?? paths.uploads;

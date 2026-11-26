@@ -6,13 +6,8 @@ import { uploadMedia } from './media';
 import Client from 'lib/models/basic/Client';
 import Contact from 'lib/models/basic/Contact';
 import { createApiHandler, ExtendedRequest } from '../apiHandler';
-import SiteSetting from 'lib/models/payment/SiteSetting';
 import { APIHandlers } from 'lib/server/middleware';
-import UrlRegistry from 'lib/models/basic/UrlRegistry';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
-import Blog from 'lib/models/blog/Blog';
-import Page from 'lib/models/basic/Page';
-import Product from 'lib/models/product/Product';
 import { logError } from 'lib/services/errorService';
 
 // Client
@@ -53,9 +48,7 @@ import { logError } from 'lib/services/errorService';
 
       if (modelId && isValidObjectId(modelId)) {
         try {
-          const updated = await Client.findByIdAndUpdate(
-            modelId,
-            {
+          const updated = await Client.findByIdAndUpdate(modelId, {
               name: data.name,
               email: data.email,
               phone: data.phone,
@@ -65,9 +58,7 @@ import { logError } from 'lib/services/errorService';
               media_id: media_id ?? undefined,
               content: data.content,
               updatedAt: new Date(),
-            },
-            { new: true }
-          );
+            }, { new: true });
 
           return res.status(200).json({ message: '✅ Entry updated successfully', data: updated });
         } catch (error) { await logError(error, { function: "get_filtered_country", payload: req.body }); }

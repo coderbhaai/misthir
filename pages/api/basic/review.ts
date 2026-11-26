@@ -18,16 +18,14 @@ export async function create_update_review(req: ExtendedRequest, res: NextApiRes
 
     const { module, module_id, rating, review } = data;
 
-    const updatedOrCreated = await Review.findOneAndUpdate({ module, module_id, user_id }, 
-          {
+    const updatedOrCreated = await Review.findOneAndUpdate({ module, module_id, user_id }, {
             $set: {
               rating,
               review,
-              status: 0,
+              status: true,
               updatedAt: new Date(),
             }, $setOnInsert: { createdAt: new Date() }
-          }, { new: true, upsert: true }
-        );
+          }, { new: true, upsert: true });
         
     const files = Array.isArray(req.files?.["images[]"]) ? req.files?.["images[]"] : req.files?.image ? [req.files.image] : [];
 
@@ -39,7 +37,7 @@ export async function create_update_review(req: ExtendedRequest, res: NextApiRes
 
     for (const file of files) {
       const media_id = data._id && isValidObjectId(data._id) ? data._id : null;
-      const uploaded = await uploadMedia({ file, name: 'Image', pathType: "Review", media_id, user_id: data.user_id });
+      const uploaded = await uploadMedia({ file, name: 'Image', pathType: "review", media_id, user_id: data.user_id });
 
       mediaArray.push(uploaded);
     }
@@ -52,7 +50,10 @@ export async function create_update_review(req: ExtendedRequest, res: NextApiRes
 
 export async function get_filtered_reviews(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const data = await Review.find().populate([ { path: "module_id", select: "_id name url" }, { path: "user_id", select: "name email phone" } ]).exec();
+    const data = await Review.find().populate([ 
+      { path: "module_id", select: "_id name url" }, { path: "user_id", select: "name email phone" },
+      { path: "mediaHub", populate: { path: "media_id", model: "Media" } },
+    ]).exec();
     return res.status(200).json({ message: 'Fetched all Reviews', data });
   } catch (error) { await logError(error, { function: "get_filtered_reviews", payload: req.body }); }
 }
@@ -92,7 +93,11 @@ export async function update_review(req: ExtendedRequest, res: NextApiResponse) 
 
 export async function getReviews({ module, moduleId }: { module: string; moduleId: string }) {
   try{
-    const data = Review.find({ module, module_id: moduleId, status: true }).populate([ { path: "module_id", select: "_id name url" }, { path: "user_id", select: "name email phone" }, { path: "mediaHub", populate: { path: "media_id" } } ]).sort({ displayOrder: 1, createdAt: -1 }).lean().exec();
+    const data = Review.find({ module, module_id: moduleId, status: true }).populate([ 
+      { path: "module_id", select: "_id name url" },
+      { path: "user_id", select: "name email phone" },
+      { path: "mediaHub", populate: { path: "media_id" } } 
+    ]).sort({ displayOrder: 1, createdAt: -1 }).lean().exec();
 
     return data;
   }catch (error) { await logError(error, { function: "getReviews", payload: { module, moduleId } }); }

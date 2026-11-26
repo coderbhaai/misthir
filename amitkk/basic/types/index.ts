@@ -1,6 +1,6 @@
 // amitkk > basic > types > index.ts
 import type { SingleCommentProps, MetaProps, SingleBlogProps } from "@amitkk/basic/types/shared";
-import type { MediaProps } from "./media";
+import type { MediaHubProps, MediaProps } from "./media";
 import type { GenericModule } from "./generic";
 import type { UserProps } from "./user";
 import type { SinglePageProps } from "./page";
@@ -136,7 +136,7 @@ export interface ReviewProps {
   displayOrder: number | null;
   createdAt: Date;
   updatedAt: Date;
-  mediaHub?: MediaProps[];
+  mediaHub?: MediaHubProps[];
 }
 
 export interface AchievementProps {

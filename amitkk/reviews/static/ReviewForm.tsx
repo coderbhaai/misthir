@@ -67,7 +67,7 @@ export default function ReviewForm({ module, module_id, onSubmitted }: ReviewFor
         } catch (error) { clo(error); } finally { setUploading(false); }
     };
 
-    if( !user_id ){
+    if( !isLoggedIn ){
         return (
             <>
                 <LoginButton message="Please Login to Submit A Review"/>
