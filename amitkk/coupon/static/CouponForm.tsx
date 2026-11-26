@@ -7,14 +7,16 @@ import { useEcom } from "contexts/EcomContext";
 import { useFormHandler } from "hooks/useFormHandler";
 import React from "react";
 import { useState } from "react";
+import CouponSuggestions, { CouponSuggestionItem } from "./CouponSuggestions";
 
 type CouponFormProps = {
   function?: string;
   coupon_code?: string | null;
   allowed?: boolean;
+  suggestions?: CouponSuggestionItem[];
 }
 
-export default function CouponForm({ coupon_code, allowed=true }: CouponFormProps) {
+export default function CouponForm({ coupon_code, allowed=true, suggestions = [], }: CouponFormProps) {
   const { fetchCart } = useEcom();
   
   const initialFormData: CouponFormProps = {
@@ -48,9 +50,13 @@ export default function CouponForm({ coupon_code, allowed=true }: CouponFormProp
     };
 
   return (
-    <form onSubmit={handleSubmit}>
-        <TextField label='Coupon' value={formData.coupon_code} name='coupon_code' onChange={handleChange} required disabled={!allowed}/>
-        <Button type='submit' className="btn w-full mt-5" disabled={!allowed}>Apply Coupon</Button>
-    </form>
+    <div className="space-y-3">
+      <form onSubmit={handleSubmit}>
+          <TextField label='Coupon' value={formData.coupon_code} name='coupon_code' onChange={handleChange} required disabled={!allowed}/>
+          <Button type='submit' className="btn w-full mt-5" disabled={!allowed}>Apply Coupon</Button>
+      </form>
+      
+      {!coupon_code && ( <CouponSuggestions suggestions={suggestions} allowed={allowed} disabled={loading}/> )}
+    </div>
   );
 }

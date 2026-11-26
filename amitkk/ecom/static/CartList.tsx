@@ -218,11 +218,7 @@ export default function CartList() {
                       </div>
                     </div>
 
-                    <Iconify
-                      icon="Trash"
-                      className="h-5 w-5 text-xs absolute top-2.5 right-2.5 cursor-pointer text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(item._id)}
-                    />
+                    <Iconify icon="Trash" className="h-5 w-5 text-xs absolute top-2.5 right-2.5 cursor-pointer text-muted-foreground hover:text-destructive" onClick={() => handleDelete(item._id)}/>
                   </Card>
                 </li>
               );
@@ -231,7 +227,7 @@ export default function CartList() {
         )}
       </div>
 
-      <CouponForm coupon_code={cart?.cartCoupon?.coupon_code} />
+      <CouponForm coupon_code={cart?.cartCoupon?.coupon_code} suggestions={(cart as any)?.couponSuggestions ?? []}/>
       <CartCharges cart={cart} />
     </div>
   );

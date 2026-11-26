@@ -17,6 +17,7 @@ import { escapeRegExp } from 'lib/services/dataService';
 import { cartCheck, getSellerIdFromToken } from 'lib/services/ecomService';
 import { sellerFilter } from 'lib/server/plugins/sellerFilter';
 import { handleApplyCoupon, remove_coupon } from 'lib/services/couponService';
+import CartSku from 'lib/models/ecom/CartSku';
 
 export async function get_filtered_coupon(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -295,12 +296,49 @@ export async function apply_coupon(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
+export async function add_suggestion_units(req: NextApiRequest, res: NextApiResponse) {
+  try{
+    const payload = req.body?.data ?? req.body ?? {};
+    const qtyToAdd = Math.max(1, Number(payload.quantity || 1));
+    const cartSkuId = payload.cart_sku_id;
+    const skuId = payload.sku_id;
+    const couponCode = typeof payload.coupon_code === "string" ? payload.coupon_code.trim() : "";
+    if (!cartSkuId && !skuId) { return res.status(400).json({ status: false, message: "SKU is required", data: null }); }
+  
+    const filter: Record<string, any> = { cart_id: payload?.cart_id };
+    if (cartSkuId) {
+      filter._id = cartSkuId;
+    } else {
+      filter.sku_id = skuId;
+    }
+  
+    const updatedSku = await CartSku.findOneAndUpdate(
+      filter,
+      { $inc: { quantity: qtyToAdd } },
+      { new: true }
+    );
+  
+    if (!updatedSku) { return res.status(404).json({ status: false, message: "Cart item not found", data: null }); }
+  
+    if (couponCode) {
+      await handleApplyCoupon(payload?.cart_id, couponCode, { logUsage: true });
+    }
+  
+    await cartCheck(payload?.cart_id);
+    return res.status(200).json({ status: true, message: couponCode ? `Added ${qtyToAdd} unit(s) and applied ${couponCode}` : `Added ${qtyToAdd} unit(s)`, data: updatedSku });
+  } catch (error) {
+    await logError(error, { function: "add_suggestion_units", payload: req.body });
+    return res.status(500).json({ status: false, message: "Internal Server Error", data: null });
+  }
+}
+
 export const functions: APIHandlers = {
   create_update_coupon : { middlewares: ["checkUserId", "checkPostMethod" ] },
   get_filtered_coupon : { middlewares: ["checkUserId", "checkPostMethod" ] },
   get_target_options : { middlewares: ["checkUserId", "checkPostMethod" ] },
   get_single_coupon : { middlewares: ["checkUserId", "checkPostMethod"] },
   apply_coupon : { middlewares: ["checkPostMethod"] },
+  add_suggestion_units : { middlewares: ["checkPostMethod"] },
 }
 
 export const couponHandlers = {
@@ -309,6 +347,7 @@ export const couponHandlers = {
   get_target_options,
   get_single_coupon,
   apply_coupon,
+  add_suggestion_units
 };
 
 export const config = { api: { bodyParser: false } };

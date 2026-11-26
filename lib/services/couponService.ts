@@ -10,6 +10,7 @@ import { extractId } from "./dataService";
 import { cartCheck, getPopulatedCartQuery, isValidUntil } from "./ecomService";
 import CartCharges from "lib/models/ecom/CartCharges";
 import { logError } from "./errorService";
+import CartCouponSuggestion from "lib/models/coupon/CartCouponSuggestion";
 
 export async function validateCoupon(coupon_code: string, user_id?: string) {
   try{
@@ -342,5 +343,312 @@ export async function handleApplyCoupon(
   } catch (error) {
     await logError(error, { function: "handleApplyCoupon", payload: { cart_id } });
     return { success: false, message: "Failed to apply coupon" };
+  }
+}
+
+async function computeCouponDiscountValue(
+  coupon: any,
+  eligibleAmount: number
+): Promise<number> {
+  if (!coupon || eligibleAmount <= 0) return 0;
+  const raw =
+    coupon.discount_type === "Percent Based"
+      ? (eligibleAmount * Number(coupon.discount || 0)) / 100
+      : Number(coupon.discount || 0);
+  return Number(Math.min(eligibleAmount, Math.max(0, raw)).toFixed(2));
+}
+
+export async function syncCartCouponSuggestions(cart_id: string) {
+  try {
+    if (!cart_id) return [];
+
+    await CartCouponSuggestion.deleteMany({ cart_id });
+
+    const cart: any = await getPopulatedCartQuery(cart_id);
+    if (!cart || !Array.isArray(cart.cartSkus) || cart.cartSkus.length === 0) {
+      return [];
+    }
+
+    // Don't suggest if a coupon is already applied on the cart
+    if (cart?.cartCoupon?.coupon_code) {
+      return [];
+    }
+
+    const now = new Date();
+    const userId = cart.user_id?.toString();
+
+    // Fetch active coupons that have a minimum spend threshold (`sales`)
+    const candidateCoupons: any[] = await Coupon.find({
+      sales: { $gt: 0 },
+      is_active: { $ne: false },
+    })
+      .populate("seller_id")
+      .lean();
+
+    if (!candidateCoupons.length) return [];
+
+    const skuDiscountDocs = await CartSkuDiscount.find({ cart_id }).lean();
+    const discountByCartSkuId = new Map<string, any>();
+    for (const doc of skuDiscountDocs) {
+      discountByCartSkuId.set(await extractId(doc.cart_sku_id), doc);
+    }
+
+    // Precompute base & post-seller per-unit & line values for current cart SKUs
+    const lines: Array<{
+      item: any;
+      cartSkuKey: string;
+      skuId: string;
+      productId: string;
+      productName: string;
+      itemSellerId: string;
+      unitPrice: number;
+      qty: number;
+      postSellerUnitAmount: number;
+      postSellerLineAmount: number;
+      productBrandIds: string[];
+    }> = [];
+
+    let postSellerCartSubtotal = 0;
+    let totalCartUnits = 0;
+
+    for (const item of cart.cartSkus) {
+      const sku = item.sku_id;
+      const qty = Number(item.quantity ?? 0);
+      if (!sku || qty <= 0) continue;
+
+      const product = item.product_id;
+      const productId = product?._id?.toString() || product?.toString() || "";
+      const skuId = sku._id?.toString() || "";
+      const productName = product?.name || sku?.name || "Item";
+      const itemSellerId =
+        (await extractId(item.seller_id)) || (await extractId(product?.seller_id));
+
+      const unitPrice = getSkuUnitPriceLocal(item);
+      const baseLineAmount = Number((unitPrice * qty).toFixed(2));
+      const cartSkuKey = await extractId(item._id);
+      const skuDiscountDoc = discountByCartSkuId.get(cartSkuKey);
+
+      const sellerLineDisc = await getSkuSellerDiscountAmount(
+        skuDiscountDoc,
+        unitPrice,
+        qty,
+        baseLineAmount,
+        now
+      );
+      const postSellerLineAmount = Number(
+        Math.max(0, baseLineAmount - sellerLineDisc).toFixed(2)
+      );
+      const postSellerUnitAmount =
+        qty > 0 ? Number((postSellerLineAmount / qty).toFixed(2)) : 0;
+
+      const productBrandIds: string[] =
+        product?.brands?.map(
+          (b: any) =>
+            b.productBrand_id?._id?.toString() || b.productBrand_id?.toString()
+        ) || [];
+
+      postSellerCartSubtotal = Number(
+        (postSellerCartSubtotal + postSellerLineAmount).toFixed(2)
+      );
+      totalCartUnits += qty;
+
+      lines.push({
+        item,
+        cartSkuKey,
+        skuId,
+        productId,
+        productName,
+        itemSellerId,
+        unitPrice,
+        qty,
+        postSellerUnitAmount,
+        postSellerLineAmount,
+        productBrandIds,
+      });
+    }
+
+    if (postSellerCartSubtotal <= 0 || totalCartUnits <= 0) return [];
+
+    const currentAdminDiscount = await getTotalCartAdminDiscount(
+      cart_id,
+      postSellerCartSubtotal,
+      now
+    );
+
+    const suggestionsToInsert: Array<Record<string, any>> = [];
+    const MAX_EXTRA_UNITS = 10;
+
+    for (const coupon of candidateCoupons) {
+      const { valid } = await validateCoupon(coupon.coupon_code, userId);
+      if (!valid) continue;
+
+      const minOrderAmount = Number(coupon.sales || 0);
+      const couponSellerId = await extractId(coupon?.seller_id);
+      const targets = await CouponTarget.find({ coupon_id: coupon._id }).lean();
+      const hasTargets = targets.length > 0;
+
+      const targetSkus = new Set(
+        targets.filter((t) => t.module === "Sku").map((t) => t.module_id.toString())
+      );
+      const targetProducts = new Set(
+        targets.filter((t) => t.module === "Product").map((t) => t.module_id.toString())
+      );
+      const targetBrands = new Set(
+        targets.filter((t) => t.module === "ProductBrand").map((t) => t.module_id.toString())
+      );
+      const targetTypes = new Set(
+        targets.filter((t) => t.module === "ProductType").map((t) => t.module_id.toString())
+      );
+
+      const productTypeMap = new Set<string>();
+      if (targetTypes.size > 0) {
+        const allProductIds = lines.map((l) => l.productId).filter(Boolean);
+        const metas = await ProductProductmeta.find({
+          product_id: { $in: allProductIds },
+          productmeta_id: { $in: Array.from(targetTypes) },
+        }).lean();
+        metas.forEach((m) => productTypeMap.add(m.product_id.toString()));
+      }
+
+      const isLineEligible = (line: (typeof lines)[number]) => {
+        if (couponSellerId && line.itemSellerId !== couponSellerId) return false;
+        if (!hasTargets) return true;
+        if (line.skuId && targetSkus.has(line.skuId)) return true;
+        if (line.productId && targetProducts.has(line.productId)) return true;
+        if (
+          targetBrands.size > 0 &&
+          line.productBrandIds.some((bId) => targetBrands.has(bId))
+        ) {
+          return true;
+        }
+        if (line.productId && productTypeMap.has(line.productId)) return true;
+        return false;
+      };
+
+      // Current eligible amount after seller + spread admin discount
+      const currentAdminPerUnit = currentAdminDiscount / totalCartUnits;
+      let currentEligible = 0;
+      for (const line of lines) {
+        const lineAdmin = Math.min(
+          line.postSellerLineAmount,
+          currentAdminPerUnit * line.qty
+        );
+        const netLine = Math.max(0, line.postSellerLineAmount - lineAdmin);
+        if (isLineEligible(line)) {
+          currentEligible += netLine;
+        }
+      }
+      currentEligible = Number(currentEligible.toFixed(2));
+
+      if (currentEligible >= minOrderAmount) continue;
+
+      let bestCandidate: {
+        line: (typeof lines)[number];
+        addQty: number;
+        estimatedSavings: number;
+      } | null = null;
+
+      for (const line of lines) {
+        if (!isLineEligible(line) || line.postSellerUnitAmount <= 0) continue;
+
+        for (let addQty = 1; addQty <= MAX_EXTRA_UNITS; addQty++) {
+          const newQty = line.qty + addQty;
+          const addedPostSeller = line.postSellerUnitAmount * addQty;
+          const newSubtotal = postSellerCartSubtotal + addedPostSeller;
+          const newTotalUnits = totalCartUnits + addQty;
+
+          // Recompute admin discount on updated cart subtotal if percent-based
+          const charges: any = await CartCharges.findOne({ cart_id }).lean();
+          const adminRate = Number(charges?.admin_discount ?? 0);
+          const adminType =
+            charges?.admin_discount_type === "percent" ? "percent" : "flat";
+          const newAdminTotal =
+            adminRate > 0 && newSubtotal > 0
+              ? Math.min(
+                  newSubtotal,
+                  adminType === "percent"
+                    ? (newSubtotal * Math.min(adminRate, 100)) / 100
+                    : adminRate
+                )
+              : 0;
+
+          const newAdminPerUnit =
+            newTotalUnits > 0 ? newAdminTotal / newTotalUnits : 0;
+
+          let projectedEligible = 0;
+          for (const other of lines) {
+            const oQty = other.cartSkuKey === line.cartSkuKey ? newQty : other.qty;
+            const oPostSeller =
+              other.cartSkuKey === line.cartSkuKey
+                ? other.postSellerLineAmount + addedPostSeller
+                : other.postSellerLineAmount;
+            const oAdmin = Math.min(oPostSeller, newAdminPerUnit * oQty);
+            if (isLineEligible(other)) {
+              projectedEligible += Math.max(0, oPostSeller - oAdmin);
+            }
+          }
+          projectedEligible = Number(projectedEligible.toFixed(2));
+
+          if (projectedEligible >= minOrderAmount) {
+            const savings = await computeCouponDiscountValue(
+              coupon,
+              projectedEligible
+            );
+            if (savings > 0) {
+              if (
+                !bestCandidate ||
+                addQty < bestCandidate.addQty ||
+                (addQty === bestCandidate.addQty &&
+                  savings > bestCandidate.estimatedSavings)
+              ) {
+                bestCandidate = { line, addQty, estimatedSavings: savings };
+              }
+            }
+            break;
+          }
+        }
+      }
+
+      if (bestCandidate) {
+        const unitLabel =
+          bestCandidate.addQty === 1 ? "1 more unit" : `${bestCandidate.addQty} more units`;
+
+        suggestionsToInsert.push({
+          cart_id,
+          coupon_id: coupon._id,
+          coupon_code: coupon.coupon_code,
+          coupon_title: coupon.title || coupon.name || "",
+          seller_id: couponSellerId || null,
+          cart_sku_id: bestCandidate.line.item?._id || null,
+          sku_id: bestCandidate.line.skuId || null,
+          product_id: bestCandidate.line.productId || null,
+          product_name: bestCandidate.line.productName,
+          additional_qty_needed: bestCandidate.addQty,
+          estimated_savings: bestCandidate.estimatedSavings,
+          min_order_amount: minOrderAmount,
+          current_eligible_amount: currentEligible,
+          message: `Add ${unitLabel} of ${bestCandidate.line.productName} to apply ${coupon.coupon_code} and save ₹${bestCandidate.estimatedSavings.toFixed(2)}`,
+        });
+      }
+    }
+
+    suggestionsToInsert.sort(
+      (a, b) =>
+        b.estimated_savings - a.estimated_savings ||
+        a.additional_qty_needed - b.additional_qty_needed
+    );
+
+    const topSuggestions = suggestionsToInsert.slice(0, 3);
+    if (topSuggestions.length > 0) {
+      await CartCouponSuggestion.insertMany(topSuggestions);
+    }
+
+    return topSuggestions;
+  } catch (error) {
+    await logError(error, {
+      function: "syncCartCouponSuggestions",
+      payload: { cart_id },
+    });
+    return [];
   }
 }
