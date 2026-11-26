@@ -49,7 +49,7 @@ export default function CouponForm({ coupon_code, allowed=true }: CouponFormProp
 
   return (
     <form onSubmit={handleSubmit}>
-        <TextField label='Coupon' value={formData.coupon_code} name='coupon_code' onChange={handleChange} required readOnly={!allowed}/>
+        <TextField label='Coupon' value={formData.coupon_code} name='coupon_code' onChange={handleChange} required disabled={!allowed}/>
         <Button type='submit' className="btn w-full mt-5" disabled={!allowed}>Apply Coupon</Button>
     </form>
   );

@@ -7,6 +7,7 @@ import ModuleIdFilter from "./ModuleIdFilter";
 import PermissionFilter from "./PermissionFilter";
 import RoleFilter from "./RoleFilter";
 import UserFilter from "./UserFilter";
+import SellerFilter from "./SellerFilter";
 import GenericFilter from "./GenericFilter";
 import ProductTypeFilter from "./ProductTypeFilter";
 import ProductBrandFilter from "./ProductBrandFilter";
@@ -19,6 +20,7 @@ export const FILTER_COMPONENTS: Record<string, FC<any>> = {
   ModuleIdFilter,
   RoleFilter,
   PermissionFilter,
+  SellerFilter,
   UserFilter,
   GenericFilter,
   ProductTypeFilter,
@@ -35,6 +37,7 @@ export const FILTER_META: Record<string, { field: string; operator?: "eq" | "con
   RoleFilter: { field: "role_id", operator: "eq" },
   LeadStatusFilter: { field: "lead_status", operator: "eq" },
   UserFilter: { field: "user_id", operator: "eq" },
+  SellerFilter: { field: "seller_id", operator: "eq" },
   GenericFilter: { field: "user_id", operator: "eq" },
   portfolio_filter: { field: "module", operator: "eq" },
   ProductTypeFilter: { field: "productType_id", operator: "eq" },

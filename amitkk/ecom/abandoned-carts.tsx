@@ -5,10 +5,12 @@ import { AdminDataTable, DataProps } from "@amitkk/ecom/admin/admin-abandoned-ca
 import { useAdminPage } from "hooks/useAdminPage";
 
 export function AdminAbandonedCart() {
-    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/ecom", listFunction: "get_filtered_abandoned_carts" });   
+    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/abandonedCart", listFunction: "get_filtered_abandoned_carts" });   
 
     const FILTER_CONFIG = [
-        { name: "SearchFilter", grid: "col-span-9", },
+        { name: "UserFilter", grid: "col-span-3" },
+        { name: "SellerFilter", grid: "col-span-3" },
+        { name: "SearchFilter", grid: "col-span-3", },
         { name: "StatusFilter", grid: "col-span-3", },
     ] as const;
 

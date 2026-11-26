@@ -8,6 +8,7 @@ import { APIHandlers } from 'lib/server/middleware';
 import { logError } from 'lib/services/errorService';
 import SiteSetting from 'lib/models/payment/SiteSetting';
 import Razorpay from 'razorpay';
+import { getPopulatedCartQuery } from 'lib/services/ecomService';
 
 // SiteSetting
   export async function get_all_settings(req: NextApiRequest, res: NextApiResponse) {
@@ -62,7 +63,7 @@ export async function get_payment_data(req: NextApiRequest, res: NextApiResponse
     
     let data = null;
     if( module ==="Cart"){
-      data = await Cart.findById(module_id).populate([ { path: 'billing_address_id' }, { path: 'shipping_address_id' }, { path: 'cartSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }, { path: 'cartCharges' }]).exec();
+      data = await getPopulatedCartQuery(module_id);
     }
 
     if( !data ){ return res.status(400).json({ message: 'Entry is missing', data: null }); }
@@ -115,7 +116,7 @@ export async function payment_response(req: NextApiRequest, res: NextApiResponse
     
     let data = null;
     if (module === "Cart") {
-      data = await Cart.findById(module_id).exec();
+      data = await getPopulatedCartQuery(module_id);
     }
     if (!data) { return res.status(400).json({ message: 'Entry is missing', data: null }); }
 

@@ -9,7 +9,7 @@ export  function AdminProductBrand(){
     const admin =   useAdminPage<DataProps>({ listEndpoint: "ecom/basic", listFunction: "get_filtered_product_brands", singleFunction: "get_single_product_brand" });
 
     const FILTER_CONFIG = [
-        { name: "UserFilter", grid: "col-span-3", props: { role: ["Seller"] } },
+        { name: "SellerFilter", grid: "col-span-3" },
         { name: "SearchFilter", grid: "col-span-6", },
         { name: "StatusFilter", grid: "col-span-3", },
     ] as const;

@@ -203,7 +203,6 @@ export async function applySalesAndGetUpsells(cart_id: string) {
     }
 
     const now = new Date();
-    // 1. Fetch active sales
     const activeSales = await Sale.find({
       status: true,
       valid_from: { $lte: now },

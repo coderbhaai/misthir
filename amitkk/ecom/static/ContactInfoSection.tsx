@@ -13,7 +13,22 @@ interface ContactInfoSectionProps {
   phoneConsent?: boolean;
   setPhoneConsent?: (val: boolean) => void;
   editable?: boolean;
+  maskContact?: boolean;
   onBlur?: () => void;
+}
+
+function maskEmail(value: string): string {
+  if (!value) return "";
+  const visiblePrefix = value.slice(0, 5);
+  const remainingCount = Math.max(value.length - 5, 3);
+  return `${visiblePrefix}${"*".repeat(remainingCount)}`;
+}
+
+function maskPhone(value: string): string {
+  if (!value) return "";
+  const lastFour = value.slice(-4);
+  const maskedCount = Math.max(value.length - 4, 3);
+  return `${"*".repeat(maskedCount)}${lastFour}`;
 }
 
 export default function ContactInfoSection({
@@ -26,12 +41,17 @@ export default function ContactInfoSection({
   phoneConsent = false,
   setPhoneConsent,
   editable = true,
+  maskContact = false,
   onBlur,
 }: ContactInfoSectionProps) {
+  const isMasked = Boolean(maskContact);
+  const displayEmail = isMasked ? maskEmail(email) : email;
+  const displayPhone = isMasked ? maskPhone(phone) : phone;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="space-y-1.5">
-        <TextField type="email" label="Email" value={email} name="email" onChange={(e) => setEmail?.(e.target.value)} required={editable} disabled={!editable} onBlur={onBlur}/>
+        <TextField type={isMasked ? "text" : "email"} label="Email" value={displayEmail} name="email" onChange={(e) => setEmail?.(e.target.value)} required={editable && !isMasked} disabled={!editable || isMasked} onBlur={onBlur}/>
         <div className="flex items-center space-x-2 cursor-pointer">
           <Checkbox id="email-news" checked={Boolean(emailConsent)} disabled={!editable} onCheckedChange={(checked) => setEmailConsent?.(Boolean(checked))}/>
           <Label htmlFor="email-news" className="text-sm font-normal">Email me with news and offers</Label>
@@ -39,7 +59,7 @@ export default function ContactInfoSection({
       </div>
 
       <div className="space-y-1.5">
-        <TextField label="Phone" value={phone} name="phone" onChange={(e) => setPhone?.(e.target.value)} required={editable} disabled={!editable} onBlur={onBlur}/>
+        <TextField type={isMasked ? "text" : "tel"} label="Phone" value={displayPhone} name="phone" onChange={(e) => setPhone?.(e.target.value)} required={editable && !isMasked} disabled={!editable || isMasked} onBlur={onBlur} />
         <div className="flex items-center space-x-2 cursor-pointer">
           <Checkbox id="whatsapp-news" checked={Boolean(phoneConsent)} disabled={!editable} onCheckedChange={(checked) => setPhoneConsent?.(Boolean(checked))}/>
           <Label htmlFor="whatsapp-news" className="text-sm font-normal">Whatsapp me with news and offers</Label>

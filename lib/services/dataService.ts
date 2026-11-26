@@ -172,7 +172,6 @@ export async function getRelatedContent({ module, moduleId }: { module: string; 
   }
 }
 
-
 export async function getBlockContent({ module, moduleId }: { module: string; moduleId: string }) {
   try {
     const id = new Types.ObjectId(moduleId);
@@ -262,3 +261,26 @@ export function numberOrDefault(value: any): number {
 }
 
 export const toObjectIds = (arr: string[]) => arr.map(id => new mongoose.Types.ObjectId(id));
+
+export async function extractId(val: any): Promise<string> {
+  if (!val) return "";
+  if (typeof val === "object") {
+    if (val._id) return String(val._id);
+    if (typeof val.toString === "function") return val.toString();
+  }
+  return String(val);
+}
+
+export function getProp<T>(value: unknown, prop: keyof T, fallback: any = ""): any {
+  if ( value && typeof value === "object" && !("toHexString" in (value as any)) ) {
+    return (value as T)[prop] ?? fallback;
+  }
+  return fallback;
+}
+
+export async function isDateValid(validity: unknown, now: Date): Promise<boolean> {
+  if (!validity) return true;
+  const expiry = new Date(validity as string | Date);
+  if (Number.isNaN(expiry.getTime())) return true;
+  return expiry.getTime() >= now.getTime();
+}

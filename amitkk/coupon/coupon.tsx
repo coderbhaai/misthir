@@ -8,7 +8,7 @@ export  function AdminCoupon(){
     const admin =   useAdminPage<DataProps>({ listEndpoint: "ecom/coupon", listFunction: "get_filtered_coupon", addRoute: "/admin/add-update-coupon" });
 
     const FILTER_CONFIG = [
-        { name: "UserFilter", grid: "col-span-3", props: { role: ["Seller"] } },
+        { name: "SellerFilter", grid: "col-span-3" },
         { name: "SearchFilter", grid: "col-span-6", },
         { name: "StatusFilter", grid: "col-span-3", },
     ] as const;

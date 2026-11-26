@@ -64,7 +64,7 @@ export default function OrderGuideProductModal({ open, orderGuideId, handleClose
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await apiRequest("POST", "product/product", { function: "get_products", search: debouncedSearch, limit: 20 });
+      const res = await apiRequest("POST", "ecom/product", { function: "get_products", search: debouncedSearch, limit: 20 });
       if (res?.data) setProducts(res.data);
     } catch (error) { clo(error); } finally { setLoading(false); }
   };

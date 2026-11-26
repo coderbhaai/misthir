@@ -144,7 +144,7 @@ export default function Shop({ type, slug, initialRecord }: ShopProps) {
   useEffect(() => {
     const requestId = ++sidebarRequestIdRef.current;
 
-    const url = "product/product?function=get_product_modules";
+    const url = "ecom/product?function=get_product_modules";
 
     apiRequest("POST", url)
       .then((res) => {
@@ -171,7 +171,7 @@ export default function Shop({ type, slug, initialRecord }: ShopProps) {
 
     const isFirstPage = pageRow === 0;
 
-    apiRequest("POST", "product/product", {
+    apiRequest("POST", "ecom/product", {
       function: "get_products",
       filterRow: selectedFilters,
       search: debouncedSearch,

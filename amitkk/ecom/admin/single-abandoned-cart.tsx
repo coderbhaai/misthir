@@ -26,7 +26,11 @@ export const SingleAbandoneCart: React.FC<DataFormProps> = ({ dataId = "" }) => 
     if (!dataId) return;
 
     try {
-      const res = await apiRequest("GET", `ecom/ecom?function=get_single_abdandoned_cart&id=${dataId}`);
+      const res = await apiRequest("POST", `ecom/abandonedCart`, {
+        function: "get_single_abdandoned_cart",
+        id: dataId
+      });
+
       if (res?.data) {
         const cartData = res.data as CartProps;
         setCart(cartData);
@@ -44,9 +48,9 @@ export const SingleAbandoneCart: React.FC<DataFormProps> = ({ dataId = "" }) => 
   if( !cart ){ return null; }
 
   return (
-    <div className="row p-4">
-      <div className="col-span-12 md:col-span-7">
-        <h2 className="text-2xl font-bold tracking-tight">Contact</h2>
+    <div className="row py-6">
+      <div className="col-span-12 md:col-span-7 space-y-6">
+        <h1 className="text-xl md:text-2xl font-bold mb-5">Cart</h1>
 
         <ContactInfoSection email={cart?.cartConsent?.email} phone={cart?.cartConsent?.phone} emailConsent={cart?.cartConsent?.emailConsent} phoneConsent={cart?.cartConsent?.phoneConsent} editable={false}/>
         { cart?.shipping_address_id && ( <p className="my-3"><strong>Shipping Address</strong> : {fullAddress(cart?.shipping_address_id as AddressProps)}</p>)}
@@ -67,6 +71,7 @@ export const SingleAbandoneCart: React.FC<DataFormProps> = ({ dataId = "" }) => 
           <SkuItemList items={cart?.cartSkus ?? []} />
           <CouponForm coupon_code={cart?.cartCoupon?.coupon_code} allowed={false}/>
           <CartCharges cart={cart}/>
+          <Button className="w-full bg-black text-white hover:bg-black/90 py-5" onClick={() => setOpenDiscountModal(true)}>Give Additional Discount</Button>
         </div>
       </div>
 

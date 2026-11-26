@@ -3,12 +3,12 @@ import { useRouter } from 'next/router';
 
 const EditSingleAbandoneCart = () => {
   const router = useRouter();
-  const { cart_id } = router.query;
+  const { id } = router.query;
 
   if (!router.isReady) return <div>Loading...</div>;
-  if (!cart_id) return <div>Error: No ID found</div>;
+  if (!id) return <div>Error: No ID found</div>;
 
-  return <SingleAbandoneCart dataId={cart_id as string}/>;
+  return <SingleAbandoneCart dataId={id as string}/>;
 };
 
 export default EditSingleAbandoneCart;

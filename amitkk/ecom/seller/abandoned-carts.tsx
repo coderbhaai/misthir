@@ -2,10 +2,11 @@
 
 import { AdminTableLayout } from "@amitkk/basic/utils/layouts/AdminTableLayout";
 import { useAdminPage } from "hooks/useAdminPage";
-import { AdminDataTable, DataProps } from "@amitkk/ecom/seller/admin/seller-abandoned-cart-table";
+import { AdminDataTable } from "@amitkk/ecom/seller/admin/seller-abandoned-cart-table";
+import { CartProps } from "../types";
 
 export function SellerAbandonedCart() {
-    const admin = useAdminPage<DataProps>({ listEndpoint: "ecom/ecom", listFunction: "get_seller_abandoned_carts" });
+    const admin = useAdminPage<CartProps>({ listEndpoint: "ecom/abandonedCart", listFunction: "get_filtered_abandoned_carts" });
 
     const FILTER_CONFIG = [
         { name: "SearchFilter", grid: "col-span-9", },
@@ -17,13 +18,13 @@ export function SellerAbandonedCart() {
                     { id: "total", label: "Payment" },
                     { id: "sku", label: "Products" },
                     { id: "charges", label: "Charges" },
-                    { id: "date", label: "Date" },
+                    { id: "Coupon", label: "Coupon" },
                     { id: "", label: "" },
                 ];
 
     return (
         <AdminTableLayout admin={admin} title="Abandoned Cart" filters={FILTER_CONFIG} head={head} 
-            rows={admin.data.map((i: DataProps) => ( <AdminDataTable key={String(i._id)} row={i}/> ))}>
+            rows={admin.data.map((i: CartProps) => ( <AdminDataTable key={String(i._id)} row={i}/> ))}>
         </AdminTableLayout>
     );
 }

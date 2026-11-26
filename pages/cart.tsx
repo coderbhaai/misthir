@@ -17,6 +17,7 @@ import BackOrdersList from "@amitkk/ecom/static/BackOrdersList";
 import CreateUpdateAddressModal from "@amitkk/address/static/create-address-modal";
 import ContactInfoSection from "@amitkk/ecom/static/ContactInfoSection";
 import { makePayment } from "@amitkk/payment/utils/utils";
+import PaymentStatic from "@amitkk/ecom/static/PaymentStatic";
 
 export default function CheckoutPage() {
   const { fetchCart, sendAction, cart, relatedProducts } = useEcom();
@@ -286,7 +287,7 @@ export default function CheckoutPage() {
         <div className="row items-start">
           <div className="col-span-12 md:col-span-7 space-y-6">
             <div>
-              <h1 className="text-lg font-bold mb-3 text-foreground">My Cart</h1>
+              <h1 className="text-xl md:text-2xl font-bold mb-5">My Cart</h1>
               <ContactInfoSection email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} emailConsent={emailConsent} phoneConsent={phoneConsent} onBlur={syncAddressContactInfo} setEmailConsent={(val) => { setEmailConsent(val); updateCartDetails({ emailConsent: val }); }} setPhoneConsent={(val) => { setPhoneConsent(val); updateCartDetails({ phoneConsent: val }); }}/>
             </div>
 
@@ -330,7 +331,8 @@ export default function CheckoutPage() {
               <Textarea label="Delivery Instructions" value={orderNote} name="content" onChange={(e) => setOrderNote(e.target.value)} onBlur={() => updateCartDetails({ user_remarks: orderNote })} rows={2}/>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-foreground">Payment Method</label>
+                <PaymentStatic/>
+                <label className="mt-5 block text-sm font-medium mb-1.5 text-foreground">Payment Method</label>
                 <select value={paymode} onChange={(e) => updatePaymode(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                   <option value="Online">Online</option>
                   {allowCod && <option value="COD">Cash on Delivery</option>}
@@ -343,7 +345,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-5 border-t md:border-t-0 md:border-l border-border pt-6 md:pt-0 md:pl-8">
+          <div className="col-span-12 md:col-span-5 pt-6 md:pt-0 md:pl-8">
             <CartList/>
             {/* <BackOrdersList backOrders={cart.backOrders} /> */}
           </div>

@@ -5,11 +5,7 @@ import { createApiHandler, ExtendedRequest, } from '../apiHandler';
 import Coupon from 'lib/models/coupon/Coupon';
 import { uploadMedia } from '../basic/media';
 import BuyOneGetOne from 'lib/models/ecom/BuyOneGetOne';
-import { recalculateCart } from './ecom';
-import { getEffectiveSkuPrice } from './sales';
 import { APIHandlers } from 'lib/server/middleware';
-import CartCoupon, { CartCouponDoc } from 'lib/models/coupon/CartCoupon';
-import Cart from 'lib/models/ecom/Cart';
 import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Product from 'lib/models/product/Product';
 import ProductBrand from 'lib/models/product/ProductBrand';
@@ -17,11 +13,10 @@ import ProductProductmeta from 'lib/models/product/ProductProductmeta';
 import Productmeta from 'lib/models/product/Productmeta';
 import CouponTarget from 'lib/models/coupon/CouponTarget';
 import { getCartIdFromRequest } from '../cartUtils';
-import CouponUser from 'lib/models/coupon/CouponUser';
-import CouponUsageLog from 'lib/models/coupon/CouponUsageLog';
 import { escapeRegExp } from 'lib/services/dataService';
-import { getSellerIdFromToken } from 'lib/services/ecomService';
+import { cartCheck, getSellerIdFromToken } from 'lib/services/ecomService';
 import { sellerFilter } from 'lib/server/plugins/sellerFilter';
+import { remove_coupon } from 'lib/services/couponService';
 
 export async function get_filtered_coupon(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -39,7 +34,6 @@ export async function get_filtered_coupon(req: NextApiRequest, res: NextApiRespo
     ]).skip(skip).limit(safeLimit).sort({ createdAt: -1 });
 
     return res.status(200).json({ message: "Fetched all coupons", data, pagination: { total, page, limit: safeLimit, pages: Math.ceil(total / safeLimit) } });
-
   } catch (error) { await logError(error, { function: "get_filtered_coupon", payload: req.body }); }
 }
 
@@ -279,182 +273,16 @@ export async function get_target_options(req: ExtendedRequest, res: NextApiRespo
   }
 }
 
-export async function validateCoupon(coupon_code: string, user_id?: string) {
-  const coupon = await Coupon.findOne({ coupon_code, status: true }).populate("seller_id").exec();
-  if (!coupon) return { valid: false, message: "Invalid or inactive coupon code" };
-
-  const now = new Date();
-  if (now < new Date(coupon.valid_from) || now > new Date(coupon.valid_to)) { return { valid: false, message: "Coupon has expired or is not yet active" }; }
-  
-  if (user_id) {
-    if (coupon.usage_type === "Single Usage") {
-      const priorUsageCount = await CouponUsageLog.countDocuments({ coupon_id: coupon._id, user_id });
-      if (priorUsageCount > 0) { return { valid: false, message: "This single-usage coupon has already been used by you." }; }
-    }
-
-    if (coupon.usage_type === "Specific Users") {
-      const isAllowed = await CouponUser.findOne({ coupon_id: coupon._id, user_id });
-      if (!isAllowed) { return { valid: false, message: "You are not authorized to use this coupon." }; }
-    }
-  } else if (coupon.usage_type === "Single Usage" || coupon.usage_type === "Specific Users") {
-    return { valid: false, message: "Please login to use this coupon." };
-  }
-
-  return { valid: true, message: "Coupon is valid", coupon };
-}
-
-export async function remove_coupon(cart_id: string) {
-  await CartCoupon.deleteOne({ cart_id }); 
-  await recalculateCart(cart_id);
-}
-
-export async function upsertCartCoupon( cart_id: string | Types.ObjectId, data: Partial<CartCouponDoc>): Promise<CartCouponDoc> {
-  let cartCoupon = await CartCoupon.findOne({ cart_id });
-
-  if (!cartCoupon) {
-    cartCoupon = new CartCoupon({ cart_id, ...data });
-  } else {
-    Object.assign(cartCoupon, data);
-  }
-
-  return await cartCoupon.save();
-}
-
-export async function handleApplyCoupon(cart_id: string, coupon_code: string) {
-  const cart = await Cart.findById(cart_id).populate([
-    { path: "cartCharges" },
-    { 
-      path: "cartSkus", 
-      populate: [
-        { path: "sku_id" }, 
-        { path: "product_id", 
-          populate: [
-            { path: "seller_id" },
-            { path: "brands", populate: { path: "productBrand_id" } }
-          ] 
-        }
-      ] 
-    },
-  ]).exec();
-  if (!cart) return { success: false, message: "Cart not found" };
-
-  const userId = cart.user_id?.toString();
-  const { valid, message, coupon } = await validateCoupon(coupon_code, userId);
-  if (!valid || !coupon) { await remove_coupon(cart_id); return { success: false, message }; }
-
-  const coupon_seller_id = String(coupon?.seller_id?._id);
-  const targets = await CouponTarget.find({ coupon_id: coupon._id }).lean();
-  const hasTargets = targets.length > 0;
-  const targetSkus = new Set(targets.filter(t => t.module === "Sku").map(t => t.module_id.toString()));
-  const targetProducts = new Set(targets.filter(t => t.module === "Product").map(t => t.module_id.toString()));
-  const targetBrands = new Set(targets.filter(t => t.module === "ProductBrand").map(t => t.module_id.toString()));
-  const targetTypes = new Set(targets.filter(t => t.module === "ProductType").map(t => t.module_id.toString()));
-
-  let productTypeMap = new Set<string>();
-  if (targetTypes.size > 0) {
-    const allProductIds = cart.cartSkus.map((item: any) => item.product_id?._id || item.product_id);
-    const metas = await ProductProductmeta.find({ 
-      product_id: { $in: allProductIds }, 
-      productmeta_id: { $in: Array.from(targetTypes) } 
-    }).lean();
-    metas.forEach(m => productTypeMap.add(m.product_id.toString()));
-  }
-
-  let totalEligibleAmount = 0;
-
-  for (const item of cart.cartSkus) {
-    const sku = item.sku_id;
-    const quantity = item.quantity ?? 0;
-    if (!sku) continue;
-
-    const product = item.product_id;
-    const productId = product?._id?.toString() || product?.toString();
-    const skuId = sku._id?.toString();
-    const itemSellerId = item.seller_id?.toString();
-
-    if (coupon_seller_id) {
-      if (itemSellerId !== coupon_seller_id) continue;
-    }
-
-    if (hasTargets) {
-      let isEligible = false;
-
-      // Check if product belongs to any of the target brands via the `brands` virtual array
-      const productBrandIds = product?.brands?.map((b: any) => 
-        b.productBrand_id?._id?.toString() || b.productBrand_id?.toString()
-      ) || [];
-      const matchesBrand = productBrandIds.some((bId: string) => targetBrands.has(bId));
-
-      if (skuId && targetSkus.has(skuId)) {
-        isEligible = true;
-      } else if (productId && targetProducts.has(productId)) {
-        isEligible = true;
-      } else if (targetBrands.size > 0 && matchesBrand) {
-        isEligible = true;
-      } else if (productId && productTypeMap.has(productId)) {
-        isEligible = true;
-      }
-
-      if (!isEligible) continue;
-    }
-
-    totalEligibleAmount += (sku.price || 0) * quantity;
-  }
-  
-  if (coupon.sales && totalEligibleAmount < coupon.sales) {
-    await remove_coupon(cart_id);
-    const sellerName = coupon?.seller_id?.name;
-
-    const message = coupon?.seller_id
-      ? `To apply this coupon, your eligible purchases from **${sellerName}** must reach at least ₹${coupon.sales}. Current eligible amount is ₹${totalEligibleAmount}.`
-      : `Minimum eligible order amount must be ₹${coupon.sales} to apply this coupon. Current eligible amount is ₹${totalEligibleAmount}.`;
-
-    return { success: false, message };
-  }
-
-  if (totalEligibleAmount <= 0) {
-    await remove_coupon(cart_id);
-    return { success: false, message: "No eligible items in cart for this coupon." };
-  }
-
-  let discount_amount = coupon.discount_type === "Percent Based" ? (totalEligibleAmount * (coupon.discount || 0)) / 100 : (coupon.discount || 0);
-  let admin_coupon_discount = coupon.coupon_by === "Seller" ? 0 : discount_amount;
-  let seller_coupon_discount = coupon.coupon_by === "Seller" ? discount_amount : 0;
-
-  await upsertCartCoupon(cart_id, {
-    coupon_id: coupon._id,
-    admin_coupon_discount,
-    seller_coupon_discount,
-    coupon_code,
-  });
-
-  if (userId) {
-    await CouponUsageLog.create({
-      coupon_id: coupon._id,
-      user_id: userId,
-      module: "Cart",
-      module_id: cart._id,
-      discount_applied: discount_amount,
-    });
-  }
-
-  await recalculateCart(cart_id);
-  return { success: true, message: "Coupon Applied Successfully" };
-}
-
 export async function apply_coupon(req: NextApiRequest, res: NextApiResponse) {
   try {
     const cart_id = await getCartIdFromRequest(req, res);
     if (!cart_id) { return res.status(400).json({ status: false, message: "Cart not found", data: null }); }
 
     const { coupon_code } = req.body;
-    if (!coupon_code) {
-      await remove_coupon(cart_id);
-      return res.status(400).json({ status: false, message: "Coupon code is required", data: null });
-    }
+    if (!coupon_code) { return res.status(400).json({ status: false, message: "Coupon code is required", data: null }); }
 
-    const result = await handleApplyCoupon(cart_id, coupon_code);
-    return res.status(200).json({ status: result?.success, message: result?.message, data: null });
+    await cartCheck(cart_id);
+    return res.status(200).json({ status: true, message: "Coupon Applied succesfully", data: null });
   } catch (error) { await logError(error, { function: "apply_coupon", payload: req.body }); }
 }
 

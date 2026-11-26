@@ -5,16 +5,13 @@ import UserName from '@amitkk/basic/static/UserName';
 import CartChargesDetails from '@amitkk/ecom/admin/CartChargesDetails';
 import CartSkuDetails from '@amitkk/ecom/admin/CartSkuDetails';
 import { ActionCell } from '@amitkk/components/basic/ActionCell';
-
-export interface DataProps extends CartProps{
-}
+import AdminRowActions from '@amitkk/components/admin/AdminRowActions';
 
 type Props = {
-  row: DataProps;
-  onEdit: (row: DataProps) => void;
+  row: CartProps;
 };
 
-export function AdminDataTable({ row, onEdit }: Props) {
+export function AdminDataTable({ row }: Props) {
   return (
     <>
       <TableRow>
@@ -25,8 +22,12 @@ export function AdminDataTable({ row, onEdit }: Props) {
         </TableCell>
         <TableCell><CartSkuDetails skus={row.cartSkus}/></TableCell>
         <TableCell><CartChargesDetails charges={row.cartCharges}/></TableCell>
-        <ActionCell row={row} modelName="Blogmeta" onEdit={onEdit}/>
+        <ActionCell row={row} show_status={false} usePopover/>
       </TableRow>
+
+      <AdminRowActions id={row._id.toString()} actions={[
+        { label: "Edit", href: `/seller/abandoned-cart/${row._id}` },
+      ]}/>
     </>
   );
 }

@@ -2,30 +2,21 @@ import mongoose, { Types } from 'mongoose';
 import { createApiHandler } from '../apiHandler';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getCartIdFromRequest, setCookie } from '../cartUtils';
-import Sku from 'lib/models/product/Sku';
 import Product from 'lib/models/product/Product';
-import TaxCollected from 'lib/models/tax/TaxCollected';
-import { handleApplyCoupon } from './coupon';
-import { applySalesAndGetUpsells, getEffectiveSkuPrice } from './sales';
 import { initAction } from "lib/services/actionService";
 import { APIHandlers } from 'lib/server/middleware';
-import Cart, { CartDoc } from 'lib/models/ecom/Cart';
-import CartCharges from 'lib/models/ecom/CartCharges';
+import Cart from 'lib/models/ecom/Cart';
 import CartCoupon from 'lib/models/coupon/CartCoupon';
 import CartSku from 'lib/models/ecom/CartSku';
 import Order from 'lib/models/ecom/Order';
 import OrderCharges from 'lib/models/ecom/OrderCharges';
 import OrderCoupon from 'lib/models/coupon/OrderCoupon';
 import OrderSku from 'lib/models/ecom/OrderSku';
-import CartSkuDetail from 'lib/models/ecom/CartSkuDetail';
 import Address from 'lib/models/address/Address';
 import CartConsent from 'lib/models/ecom/CartConsent';
-import OrderConsent from 'lib/models/ecom/OrderConsent';
-import OrderOrderConsent from 'lib/models/ecom/OrderOrderConsent';
 import { processModuleFinancials } from 'lib/services/financialService';
-import { getUserIdFromToken } from 'lib/services/authService';
 import { logError } from 'lib/services/errorService';
-import { getGenericContent } from 'lib/services/dataService';
+import { cartCheck, create_cart, getPopulatedCartQuery, handleConsent, update_cart } from 'lib/services/ecomService';
 
 export async function add_to_cart(req: any, res: any) {
   try {
@@ -46,173 +37,12 @@ export async function add_to_cart(req: any, res: any) {
   } catch (error) { return await logError(error, { function: "add_to_cart", payload: req.body }); }
 } 
 
-export async function create_cart(req: any, res: any) {
-  try {
-    const data = req.body;
-    const user_id = await getUserIdFromToken(req);
-    let payable_amount = 0;
-    
-    const newEntry = new Cart({
-      user_id: user_id,
-      billing_address_id: data.billing_address_id,
-      shipping_address_id: data.shipping_address_id,
-      paymode: "cod",
-      weight: data.weight,
-      total: data.total,
-      payable_amount: payable_amount,
-      user_remarks: data.user_remarks,
-    });
-
-    const savedCart = await newEntry.save();
-    const cartId = savedCart._id.toString();
-    setCookie(res, 'cartId', cartId);
-    return cartId;
-  } catch (error) { return await logError(error, { function: "create_cart", payload: req.body }); }
-}
-
-export async function update_cart(req: any, cart_id: string): Promise<{ status: boolean; message: string; upsell_message?: string }> {
-  try {
-    const data = req.body;
-    const sku = await Sku.findOne({ _id: data.sku_id }).populate({ path: 'product_id', populate: { path: 'seller_id' } }).exec();
-    if (!sku) { return { status: false, message: 'SKU not found' }; }
-    if (!sku.product_id){ return { status: false, message: 'SKU does not have a linked product' }; }
-    if (!cart_id || !mongoose.Types.ObjectId.isValid(cart_id)) { return { status: false, message: 'Invalid cart_id' }; }
-
-    const cart = await Cart.findById(cart_id).exec();
-    if (!cart) { return { status: false, message: 'Cart not found' }; }
-
-    const flavor_id = data.flavor_id || null;
-    const color_id = data.color_id || null;
-
-    let cartSkus = await CartSku.find({ cart_id, sku_id: data.sku_id }).populate('details').exec();
-
-    let cartSku = cartSkus.find(item => {
-      const details = (item as any).details || [];
-      const itemFlavor = details.find((d: any) => d.module_id.toString() === flavor_id)?.module_id?.toString() || null;
-      const itemColor = details.find((d: any) => d.module_id.toString() === color_id)?.module_id?.toString() || null;
-      
-      return itemFlavor === flavor_id && itemColor === color_id;
-    });
-
-    let message = "";
-
-    if (cartSku) {
-      if (data.action === 'add_to_cart') {
-        cartSku.quantity += data.quantity || 1;
-      } else if (data.action === 'remove_from_cart') {
-        cartSku.quantity -= 1;
-      }
-
-      if (cartSku.quantity <= 0) {
-        await cartSku.remove();
-        message = 'Cart SKU entry removed as quantity became 0';
-      } else {
-        await cartSku.save();
-        message = "Cart Updated";
-      }
-    } else {
-      if (data.action === 'add_to_cart') {
-        const product = sku.product_id as any;
-        const newCartSku = new CartSku({
-          cart_id,
-          sku_id: data.sku_id,
-          quantity: data.quantity || 1,
-          product_id: product._id,
-          seller_id: product.seller_id?._id,
-          price: sku?.price,
-          sale: sku?.price,
-        });
-        const savedCartSku = await newCartSku.save();
-
-        const detailPromises = [];
-        const module = 'ProductFeature';
-
-        if (flavor_id) {
-          detailPromises.push(CartSkuDetail.create({ cart_id, cart_sku_id: savedCartSku._id, module, module_id: flavor_id }));
-        }
-
-        if (color_id) {
-          detailPromises.push(CartSkuDetail.create({ cart_id, cart_sku_id: savedCartSku._id, module, module_id: color_id }));
-        }
-
-        await Promise.all(detailPromises);
-        message = "Cart Entry Created";
-      } else {
-        return { status: false, message: 'Cannot remove from cart; entry does not exist' };
-      }
-    }
-
-    await recalculateCart(cart_id);
-    const cartCharges = await CartCharges.findOne({ cart_id }).lean();
-    const upsell_message = (cartCharges as any)?.upsell_message || null;
-
-    return { status: true, message, upsell_message };
-  } catch (error) { 
-    await logError(error, { function: "update_cart", payload: req.body }); 
-    return { status: false, message: "Error updating cart" }; 
-  }
-}
-
-export async function recalculateCart(cart_id: string) {
-  try {
-    const salesResult = await applySalesAndGetUpsells(cart_id);
-
-    const updatedCart = await Cart.findById(cart_id).populate([ { path: 'cartCoupon' }, { path: 'cartCharges' }, { path: 'cartSkus', populate: { path: 'sku_id', model: 'Sku' } } ]).exec();
-    if (!updatedCart) return;
-
-    let total = salesResult.totalCartSubtotal;
-    let sales_discount = salesResult.totalCartSavings;
-
-    await upsertCartCharges(updatedCart._id, { sales_discount, upsell_message: salesResult.upsellMessage });
-
-    let charges = updatedCart.cartCharges || {};
-    let admin_discount = Number(charges.admin_discount || 0);
-
-    if (charges.admin_discount_validity) {
-      const now = new Date();
-      const expiry = new Date(charges.admin_discount_validity);
-
-      if (expiry.getTime() < now.getTime()) {
-        admin_discount = 0;
-      }
-    }
-
-    let totalSellerDiscount = updatedCart.cartSkus.reduce((sum: number, cartSku: any) => {
-      let discount = 0;
-      return sum + discount;
-    }, 0 );
-
-    const shippingCharges = Number(charges.shipping_charges || 0);
-    const codCharges = Number(charges.cod_charges || 0);
-    const adminCoupon = Number(updatedCart.cartCoupon?.admin_coupon_discount || 0);
-    const sellerCoupon = Number(updatedCart.cartCoupon?.seller_coupon_discount || 0);
-
-    const payable_amount = total + shippingCharges + codCharges - (
-      sales_discount + admin_discount + totalSellerDiscount + adminCoupon + sellerCoupon
-    );
-    
-    updatedCart.total = total;
-    updatedCart.payable_amount = Math.max(0, payable_amount);
-
-    await updatedCart.save();
-  } catch (error) { await logError(error, { function: "recalculateCart", payload: { cart_id } }); }
-}
-
 export async function get_cart_data(req: NextApiRequest, res: NextApiResponse) {
   try {
     let cart_id = await getCartIdFromRequest(req, res);
     if( !cart_id ){ return res.status(200).json({ message: 'Cart not found', data: null }); }
 
-    let cartCoupon = await CartCoupon.findOne({ cart_id });
-    if( cartCoupon ){ await handleApplyCoupon(cart_id, cartCoupon.coupon_code); }
-
-    const data = await Cart.findById(cart_id).populate([ 
-      { path: 'cartSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'seller_id' }, { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }, 
-      { path: 'cartCharges' }, 
-      { path: 'cartCoupon' },
-      { path: 'cartConsent' },
-    ]).exec();
-
+    const data = await getPopulatedCartQuery(cart_id);
     const cartProductIds = data?.cartSkus.map((item: any) => item.product_id._id);
     const relatedProducts = await Product.find({ _id: { $nin: cartProductIds }, }).populate({ path: "mediaHubs", populate: { path: "media_id", model: "Media", select: "_id path alt" } }).exec();
 
@@ -233,9 +63,8 @@ export async function increment_cart(req: NextApiRequest, res: NextApiResponse) 
     
     cartSku.quantity += 1;
     await cartSku.save();
-
-    await recalculateCart(cart_id);
-
+    await cartCheck(cart_id);
+    
     return res.status(200).json({ status: true, message: 'Quantity incremented successfully' });
   } catch (error) { return await logError(error, { function: "increment_cart", payload: req.body }); }
 }
@@ -262,8 +91,7 @@ export async function decrement_cart(req: NextApiRequest, res: NextApiResponse) 
       message = 'Quantity decremented successfully';
     }    
     
-    await recalculateCart(cart_id);
-
+    await cartCheck(cart_id);
     return res.status(200).json({ status: true, message });
   } catch (error) { return await logError(error, { function: "decrement_cart", payload: req.body }); }
 };
@@ -279,9 +107,8 @@ export async function delete_cart_item(req: NextApiRequest, res: NextApiResponse
     let cartSku = await CartSku.findOne({ cart_id, _id: cart_sku_id });
     if (!cartSku) { return res.status(400).json({ status: false, message: 'Cart item not found' }); }
 
-    await CartSku.deleteOne({ _id: cartSku._id });    
-    await recalculateCart(cart_id);
-
+    await CartSku.deleteOne({ _id: cartSku._id });
+    await cartCheck(cart_id);
     return res.status(200).json({ status: true, message: 'Cart item removed from cart' });
   } catch (error) { await logError(error, { function: "delete_cart_item", payload: req.body }); return; }
 };
@@ -352,18 +179,6 @@ export async function update_cart_array(req: NextApiRequest, res: NextApiRespons
   } catch (error) { 
     return await logError(error, { function: "update_cart_array", payload: req.body }); 
   }
-}
-
-export async function upsertCartCharges(cart_id: string, data: Partial<typeof CartCharges.prototype>) {
-  let cartCharges = await CartCharges.findOne({ cart_id });
-
-  if (!cartCharges) {
-    cartCharges = new CartCharges({ cart_id, ...data });
-  } else {
-    Object.assign(cartCharges, data);
-  }
-
-  return await cartCharges.save();
 }
 
 export async function place_order(req: NextApiRequest, res: NextApiResponse) {
@@ -503,285 +318,6 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
   } catch (error) { return await logError(error, { function: "createOrderFromCart", payload: { cart_id } }); }
 }
 
-interface CartConsentProps {
-  user_id?: string | Types.ObjectId;
-  email?: string;
-  phone?: string;
-  city_id?: string | Types.ObjectId;
-  state_id?: string | Types.ObjectId;
-  country_id?: string | Types.ObjectId;
-  emailConsent?: boolean;
-  phoneConsent?: boolean;
-}
-
-async function handleConsent(order_id: Types.ObjectId | string, cartConsent?: CartConsentProps) {
-  try{
-
-    if (!cartConsent) { return; }
-  
-    const { email, phone, user_id, city_id, state_id, country_id, emailConsent, phoneConsent } = cartConsent;
-    let orderConsentId: Types.ObjectId;
-    let emailDuplicateFlag = false;
-    let phoneDuplicateFlag = false;
-    
-    const [existingByEmail, existingByPhone] = await Promise.all([
-      email ? OrderConsent.findOne({ email }) : null,
-      phone ? OrderConsent.findOne({ phone }) : null,
-    ]);
-  
-    if (existingByEmail && existingByPhone) {
-      orderConsentId = existingByEmail._id;
-      emailDuplicateFlag = true;
-      phoneDuplicateFlag = true;
-    } else if (existingByEmail) {
-      orderConsentId = existingByEmail._id;
-      emailDuplicateFlag = true;
-      phoneDuplicateFlag = false;
-    } else if (existingByPhone) {
-      orderConsentId = existingByPhone._id;
-      emailDuplicateFlag = false;
-      phoneDuplicateFlag = true;
-    } else {
-      const newConsent = await new OrderConsent({
-        user_id,
-        email,
-        phone,
-        city_id,
-        state_id,
-        country_id,
-        emailConsent,
-        phoneConsent,
-        email_duplicate: false,
-        phone_duplicate: false,
-      }).save();
-  
-      orderConsentId = newConsent._id;
-      await new OrderOrderConsent({ order_id, orderConsent_id: orderConsentId }).save();
-    }
-  
-    if (emailDuplicateFlag || phoneDuplicateFlag) {
-      await OrderConsent.updateOne({ _id: orderConsentId }, { 
-          $set: { 
-            email_duplicate: emailDuplicateFlag, 
-            phone_duplicate: phoneDuplicateFlag 
-          }});
-    }
-  } catch (error) { return await logError(error, { function: "handleConsent", payload: { order_id, cartConsent } }); }
-}
-
-export async function get_filtered_abandoned_carts(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const data = await Cart.find().populate([ 
-      { path: 'cartCharges' },
-      { path: 'cartCoupon', populate: { path: 'coupon_id' } },
-      { path: 'user_id' },
-      { path: 'cartSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }
-    ]);
-
-    return res.status(200).json({ message: 'Cart Fetched', data });
-  } catch (error) { return await logError(error, { function: "get_filtered_abandoned_carts", payload: req.body }); }
-}
-
-export async function get_single_abdandoned_cart(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const id = (req.method === 'GET' ? req.query.id : req.body.slug) as string;
-    if ( !id ) { return res.status(400).json({ message: 'Invalid or missing Id' }); }
-
-    const data = await Cart.findById(id).populate([ 
-      { path: 'cartCharges' }, { path: 'cartCoupon' }, { path: 'cartConsent' }, { path: 'billing_address_id' }, { path: 'shipping_address_id' }, 
-      { path: 'cartSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ] }
-    ]).exec();
-
-    return res.status(200).json({ message: 'Single ABandoned Cart Fetched', data });
-  } catch (error) { return await logError(error, { function: "get_single_abdandoned_cart", payload: req.body }); }
-}
-
-export async function get_seller_abandoned_carts(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const { seller_id } = req.query;
-
-    if ( !seller_id || !mongoose.Types.ObjectId.isValid(seller_id as string)) {
-      return res.status(400).json({ message: "Issue with Seller ID", data:[] });
-    }
-    
-    const cartIdsAgg = await CartSku.aggregate([
-      { $match: { seller_id: new mongoose.Types.ObjectId(seller_id as string) } },
-      { $group: { _id: "$cart_id" } },
-      { $limit: 10 }
-    ]);
-
-    const cartIds = cartIdsAgg.map(c => c._id);
-
-    const data = await Cart.find({ _id: { $in: cartIds } })
-      .populate([ { path: 'cartCharges' }, { path: 'user_id' }, { path: 'cartSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }]).exec();
-
-    return res.status(200).json({ message: "Carts fetched", data });
-  } catch (error) { return await logError(error, { function: "get_seller_abandoned_carts", payload: req.body }); }
-}
-
-export async function apply_admin_discount(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const { data } = req.body;
-    if (!data.cart_id || !data.additional_discount || !data.admin_discount_unit || !data.admin_discount_validity_value) { return res.status(400).json({ status: false, message: 'Fields are Missing' }); }    
-
-    let expiry: Date | null = null;
-    if (data.admin_discount_validity_value && data.admin_discount_unit) {
-      const now = new Date();
-      if (data.admin_discount_unit === "hours") {
-        expiry = new Date(now.getTime() + data.admin_discount_validity_value * 60 * 60 * 1000);
-      } else if (data.admin_discount_unit === "days") {
-        expiry = new Date(now.getTime() + data.admin_discount_validity_value * 24 * 60 * 60 * 1000);
-      }
-    }
-
-    let cartCharges = await CartCharges.findOne({ cart_id: data.cart_id });
-
-    if (!cartCharges) {
-      cartCharges = new CartCharges({
-        cart_id: data.cart_id,
-        admin_discount: data.additional_discount,
-        admin_discount_validity: expiry,
-        admin_discount_validity_value: data.admin_discount_validity_value,
-        admin_discount_unit: data.admin_discount_unit,
-      });
-    } else {
-      cartCharges.admin_discount = data.additional_discount;
-      cartCharges.admin_discount_validity = expiry;
-      cartCharges.admin_discount_validity_value =  data.admin_discount_validity_value;
-      cartCharges.admin_discount_unit = data.admin_discount_unit;
-    }
-
-    await cartCharges.save();
-
-    await recalculateCart(data.cart_id);
-
-    return res.status(200).json({ status: true, message: "Cart Updated" });
-  } catch (error) { return await logError(error, { function: "apply_admin_discount", payload: req.body }); }
-};
-
-export async function apply_seller_discount(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const { data } = req.body;
-    
-    if (!data.cartSku_id || !data.seller_discount || !data.seller_discount_validity_value || !data.seller_discount_unit) { 
-      return res.status(400).json({ status: false, message: 'Fields are Missing' }); 
-    }
-
-    let cartSku = await CartSku.findOne({ _id: data.cartSku_id });
-    if (!cartSku) { return res.status(400).json({ status: false, message: 'Sku Not Found' }); }
-
-    let expiry: Date | null = null;
-    if (data.seller_discount_validity_value && data.seller_discount_unit) {
-      const now = new Date();
-      if (data.seller_discount_unit === "hours") {
-        expiry = new Date(now.getTime() + data.seller_discount_validity_value * 60 * 60 * 1000);
-      } else if (data.seller_discount_unit === "days") {
-        expiry = new Date(now.getTime() + data.seller_discount_validity_value * 24 * 60 * 60 * 1000);
-      }
-    }    
-
-    cartSku.seller_discount = data.seller_discount;
-    cartSku.seller_discount_validity = expiry;
-    cartSku.seller_discount_validity_value =  data.seller_discount_validity_value;
-    cartSku.seller_discount_unit = data.seller_discount_unit;
-
-    await cartSku.save();
-
-    await recalculateCart(cartSku.cart_id);
-
-    return res.status(200).json({ status: true, message: "Cart Updated" });
-  } catch (error) { return await logError(error, { function: "apply_seller_discount", payload: req.body }); }
-};
-
-export async function get_all_orders(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const data = await Order.find().populate([ { path: 'orderCharges' }, { path: 'user_id' }, { path: 'orderSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }]);
-
-    return res.status(200).json({ message: 'All ORders Fetched', data });
-  } catch (error) { return await logError(error, { function: "get_all_orders", payload: req.body }); }
-}
-
-export async function get_seller_orders(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const { seller_id } = req.body;
-
-    if (!seller_id || !mongoose.Types.ObjectId.isValid(seller_id as string)) {
-      return res.status(400).json({ message: "Invalid seller_id", data: [] });
-    }
-
-    const selllerObjectId = new mongoose.Types.ObjectId(seller_id as string);
-    
-    const orderSkus = await OrderSku.find({ seller_id: selllerObjectId }).select("order_id").exec();
-    const orderIds = orderSkus.map((s) => s.order_id);
-
-    if (orderIds.length === 0) { return res.status(200).json({ message: "No orders found for this Seller", data: [] }); }
-    
-    const orders = await Order.find({ _id: { $in: orderIds } })
-      .populate([
-        { path: "orderCharges" }, { path: "user_id" },
-        {
-          path: "orderSkus",
-          match: { seller_id: selllerObjectId },
-          populate: [
-            { path: "sku_id" },
-            {
-              path: "product_id",
-              populate: [
-                { path: "mediaHubs", populate: { path: "media_id" } }
-              ]
-            }
-          ]
-        }
-      ])
-      .exec();
-
-    return res.status(200).json({ message: "Seller orders fetched", data: orders });
-  } catch (error) { return await logError(error, { function: "get_seller_orders", payload: req.body }); }
-}
-
-export async function get_single_order(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const { order_id } = req.body;
-    if ( !order_id ) { return res.status(400).json({ message: 'Invalid or missing Id' }); }
-    const objectId = new mongoose.Types.ObjectId(order_id);
-
-    const data = await Order.findById(objectId).populate([ { path: 'orderCharges' }, { path: 'billing_address_id' }, { path: 'shipping_address_id' }, { path: 'orderSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }]).exec();
-    const relatedContent = await getGenericContent();
-
-    return res.status(200).json({ message: 'Single Order Fetched', data, relatedContent });
-  } catch (error) { return await logError(error, { function: "get_single_order", payload: req.body }); }
-}
-
-export async function get_user_orders(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const user_id = await getUserIdFromToken(req);
-
-    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id as string)) {
-      return res.status(400).json({ message: "Invalid user_id", data: [] });
-    }
-    
-    const orders = await Order.find({ user_id })
-      .populate([
-        { path: "orderCharges" }, { path: "user_id" },
-        {
-          path: "orderSkus",
-          populate: [
-            { path: "sku_id" },
-            {
-              path: "product_id",
-              populate: [
-                { path: "mediaHubs", populate: { path: "media_id" } }
-              ]
-            }
-          ]
-        }
-      ])
-      .exec();
-
-    return res.status(200).json({ message: "User orders fetched", data: orders });
-  } catch (error) { return await logError(error, { function: "get_user_orders", payload: req.body }); }
-}
-
 export const functions: APIHandlers = {
   add_to_cart : { middlewares: ["checkPostMethod"] },
   get_cart_data : { middlewares: [] },
@@ -790,19 +326,7 @@ export const functions: APIHandlers = {
   delete_cart_item : { middlewares: ["checkPostMethod"] },
   update_user_remarks : { middlewares: ["checkPostMethod"] },
   update_cart_array : { middlewares: ["checkPostMethod"] },
-  
-  get_filtered_abandoned_carts : { middlewares: [] },
-  get_single_abdandoned_cart : { middlewares: [] },
   place_order : { middlewares: [] },
-  apply_admin_discount : { middlewares: [] },
-  apply_seller_discount : { middlewares: [] },
-  get_seller_abandoned_carts : { middlewares: [] },
-
-  get_all_orders : { middlewares: [] },
-  get_seller_orders : { middlewares: [] },
-  get_single_order : { middlewares: ["checkPostMethod"] },
-
-  get_user_orders : { middlewares: [] },
 }
 
 export const ecomHandlers = {
@@ -813,18 +337,7 @@ export const ecomHandlers = {
   delete_cart_item,
   update_user_remarks,
   update_cart_array,
-  get_filtered_abandoned_carts,
-  get_single_abdandoned_cart,
   place_order,
-  apply_admin_discount,
-  apply_seller_discount,
-  get_seller_abandoned_carts,
-
-  get_all_orders,
-  get_seller_orders,
-  get_single_order,
-
-  get_user_orders,
 };
 
 export const config = { api: { bodyParser: false } };

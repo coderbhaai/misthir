@@ -12,7 +12,7 @@ export function AdminProducts(){
     const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
     const FILTER_CONFIG = [
-        { name: "UserFilter", grid: "col-span-3", props: { role: ["Seller"] } },
+        { name: "SellerFilter", grid: "col-span-3" },
         { name: "SearchFilter", grid: "col-span-3", },
         { name: "ProductTypeFilter", grid: "col-span-2", },
         { name: "ProductBrandFilter", grid: "col-span-2", },

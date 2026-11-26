@@ -282,8 +282,6 @@ export async function get_product_modules(req: NextApiRequest, res: NextApiRespo
     const brandFilter: Record<string, any> = { status: true };
     if (sellerId) { brandFilter.seller_id = new mongoose.Types.ObjectId(sellerId); }
 
-    console.log("brandFilter", brandFilter)
-
     const [productBrand, category, tag, productTypes, ingridient, flavors, colors, eggless, glutten, sugar, storage, tax] = await Promise.all([
       ProductBrand.find(brandFilter).select("_id name").sort({ name: 1 }).lean(),
       Productmeta.find({ status: true, module: "Category" }).select("_id name").sort({ name: 1 }).lean(),

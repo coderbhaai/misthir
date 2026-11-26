@@ -21,11 +21,7 @@ const ChargesDetails: React.FC<ChargesDetailsProps> = ({ charges }) => {
     <div>
       {chargesList.map(
         (charge, index) =>
-          Number(charge.value) > 0 && (
-            <div key={index}>
-              {charge.label} : {charge.value?.toString()}
-            </div>
-          )
+          Number(charge.value) > 0 && ( <div key={index}>{charge.label} : ₹{charge.value?.toString()}</div> )
       )}
     </div>
   );
