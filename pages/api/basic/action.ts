@@ -24,10 +24,17 @@ import TaxCollected from 'lib/models/tax/TaxCollected';
 import TaxCollectedSummary from 'lib/models/tax/TaxCollectedSummary';
 import { logError } from 'lib/services/errorService';
 import { insertIndiaStates } from 'lib/services/addressService';
+import OrderOrderConsent from 'lib/models/ecom/OrderOrderConsent';
+import OrderSku from 'lib/models/ecom/OrderSku';
+import OrderSkuDetail from 'lib/models/ecom/OrderSkuDetail';
+import OrderSkuDiscount from 'lib/models/ecom/OrderSkuDiscount';
+import OrderSellerCharges from 'lib/models/seller/OrderSellerCharges';
 
 export async function test(req: ExtendedRequest, res: NextApiResponse) {
   try {
-    await insertIndiaStates();
+
+    await clear_order();
+    // await insertIndiaStates();
     
     // if( !response ){ return res.status(400).json({ message: 'Test Went Successfully' }); }
     return res.status(200).json({ message: '✅ Test Ran successfully' });
@@ -43,6 +50,23 @@ async function clear_cart() {
   await OrderCharges.deleteMany({});
   await OrderConsent.deleteMany({});
   await CartSkuDetail.deleteMany({});
+  await Payment.deleteMany({});
+  await SellerIncome.deleteMany({});
+  await SellerPayoutRequest.deleteMany({});
+  await SellerIncomeSellerPayoutRequest.deleteMany({});
+  await TaxCollectedSummary.deleteMany({});
+  await TaxCollected.deleteMany({});
+}
+
+async function clear_order() {
+  await Order.deleteMany({});
+  await OrderCharges.deleteMany({});
+  await OrderConsent.deleteMany({});
+  await OrderOrderConsent.deleteMany({});
+  await OrderSku.deleteMany({});
+  await OrderSkuDetail.deleteMany({});
+  await OrderSkuDiscount.deleteMany({});
+  await OrderSellerCharges.deleteMany({});
   await Payment.deleteMany({});
   await SellerIncome.deleteMany({});
   await SellerPayoutRequest.deleteMany({});

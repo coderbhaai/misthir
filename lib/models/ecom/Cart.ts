@@ -10,6 +10,7 @@ export interface CartDoc extends Document<Types.ObjectId> {
   payable_amount?: number;
   user_remarks?: string;
   admin_remarks?: string;
+  allow_cod?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +25,7 @@ const cartSchema = new Schema<CartDoc>({
     payable_amount: { type: Number },
     user_remarks: { type: String },
     admin_remarks: { type: String },
+    allow_cod: { type: Boolean, default: false },
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
@@ -33,5 +35,7 @@ cartSchema.virtual('cartCoupon', { ref: 'CartCoupon', localField: '_id', foreign
 cartSchema.virtual('cartConsent', { ref: 'CartConsent', localField: '_id', foreignField: 'cart_id', justOne: true });
 cartSchema.virtual("couponSuggestions", { ref: "CartCouponSuggestion", localField: "_id", foreignField: "cart_id", justOne: false });
 cartSchema.virtual("cartSellerCharges", { ref: "CartSellerCharges", localField: "_id", foreignField: "cart_id", justOne: false });
+cartSchema.virtual("cartSellerCharges", { ref: "CartSellerCharges", localField: "_id", foreignField: "cart_id", justOne: false });
+cartSchema.virtual("cartSkuDiscount", { ref: "CartSkuDiscount", localField: "_id", foreignField: "cart_id", justOne: false });
 
 export default mongoose.models.Cart || mongoose.model<CartDoc>("Cart", cartSchema);

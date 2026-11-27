@@ -6,7 +6,6 @@ import { MediaProps } from "@amitkk/basic/types/media";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export default function ReviewPanel({ reviews, module, module_id }: { reviews: ReviewProps[]; module: string; module_id: string }) {
-  console.log("reviews", reviews)
   const [starSelected, setStarSelected] = useState<number | null>(null);
   const [activeReview, setActiveReview] = useState<ReviewProps | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

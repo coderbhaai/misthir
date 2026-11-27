@@ -32,7 +32,6 @@ export default function CheckoutPage() {
   const [selectedAddressToEdit, setSelectedAddressToEdit] = useState<string | number | null>(null);
   const [addressOptions, setAddressOptions] = useState<AddressProps[]>([]);
   const [paymode, setPaymode] = useState("Online");
-  const [allowCod, setAllowCod] = useState(false);
   const [siteSetting, setSiteSetting] = useState<SiteSettingProps[]>([]);
   const isTogglingRef = useRef(false);
 
@@ -195,11 +194,6 @@ export default function CheckoutPage() {
 
   useEffect(() => { fetchSiteSetting(); }, [fetchSiteSetting]);
 
-  useEffect(() => {
-    const codSetting = siteSetting.find((s: any) => s.module === "Allow Cod" && s.status === true);
-    setAllowCod(codSetting?.module_value === "1");
-  }, [siteSetting]);
-
   const updatePaymode = (newPaymode: string) => {
     setPaymode(newPaymode);
     updateCartDetails({ paymode: newPaymode });
@@ -240,20 +234,6 @@ export default function CheckoutPage() {
     if (cart?.payable_amount !== 0) {
       try {
         makePayment({ module: "Cart", module_id: String(cart?._id) });
-        // const res = await apiRequest("POST", "ecom/ecom", {
-        //   function: "place_order",
-        // });
-
-        // if (!res?.data?.status) { hitToastr("error", res?.data?.message || "Unable to initiate payment"); return; }
-
-        // const payment = res.data.data;
-        // await openRazorpay(payment);
-
-        
-        // await fetchCart();
-        // if (res?.data?.status) {
-        //   router.push(`/order/${res?.data?.order_id}`);
-        // }
       } catch (error) { clo(error); }
       return;
     }
@@ -338,17 +318,17 @@ export default function CheckoutPage() {
                 </div>
 
                 {!same_as_shipping && (
-  <div className="mt-4 pt-4 border-t border-border space-y-3">
-    <AddressSelectionDropdown
-      label="Select Billing Address"
-      addressOptions={addressOptions}
-      selectedAddressId={billing_address_id}
-      onSelect={(id) => updateCartBillingAddress(id)}
-      onEdit={(id) => handleOpenAddressModal("billing", id)}
-      onAddAddress={() => handleOpenAddressModal("billing")}
-    />
-  </div>
-)}
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    <AddressSelectionDropdown
+                      label="Select Billing Address"
+                      addressOptions={addressOptions}
+                      selectedAddressId={billing_address_id}
+                      onSelect={(id) => updateCartBillingAddress(id)}
+                      onEdit={(id) => handleOpenAddressModal("billing", id)}
+                      onAddAddress={() => handleOpenAddressModal("billing")}
+                    />
+                  </div>
+                )}
             </div>
 
             <div className="space-y-4 pt-2">
@@ -359,7 +339,7 @@ export default function CheckoutPage() {
                 <label className="mt-5 block text-sm font-medium mb-1.5 text-foreground">Payment Method</label>
                 <select value={paymode} onChange={(e) => updatePaymode(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                   <option value="Online">Online</option>
-                  {allowCod && <option value="COD">Cash on Delivery</option>}
+                  {cart?.allow_cod && <option value="COD">Cash on Delivery</option>}
                 </select>
               </div>
 

@@ -29,6 +29,8 @@ const orderSchema = new Schema<OrderDoc>({
 
 orderSchema.virtual('orderSkus', { ref: 'OrderSku', localField: '_id', foreignField: 'order_id', justOne: false });
 orderSchema.virtual('orderCharges', { ref: 'OrderCharges', localField: '_id', foreignField: 'order_id', justOne: true });
-orderSchema.virtual('orderCoupon', { ref: 'PrderCoupon', localField: '_id', foreignField: 'order_id', justOne: true });
+orderSchema.virtual('orderCoupon', { ref: 'OrderCoupon', localField: '_id', foreignField: 'order_id', justOne: true });
+orderSchema.virtual("orderSellerCharges", { ref: "OrderSellerCharges", localField: "_id", foreignField: "order_id", justOne: false });
+orderSchema.virtual("orderSkuDiscount", { ref: "OrderSkuDiscount", localField: "_id", foreignField: "order_id", justOne: false });
 
 export default mongoose.models.Order || mongoose.model<OrderDoc>("Order", orderSchema);

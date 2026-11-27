@@ -1,17 +1,23 @@
-// pages > order > index.tsx
-
 import UserSingleOrder from "@amitkk/ecom/user/admin/user-single-order";
 import { useEffect, useState } from "react";
 
 export default function OrderPage() {
-  const [order_id, setOrderId] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [checkedStorage, setCheckedStorage] = useState<boolean>(false);
 
   useEffect(() => {
-    const storedOrderId = localStorage.getItem("order_id");
-    setOrderId(storedOrderId);
+    try {
+      const storedOrderId = window.localStorage.getItem("order_id");
+      setOrderId(storedOrderId);
+    } catch {
+      setOrderId(null);
+    } finally {
+      setCheckedStorage(true);
+    }
   }, []);
 
-  if (!order_id) return <p>No order found</p>;
+  if (!checkedStorage) return <p>Loading order...</p>;
+  if (!orderId) return <p>No order found</p>;
 
-  return <UserSingleOrder order_id={order_id} />;
+  return <UserSingleOrder order_id={orderId} />;
 }

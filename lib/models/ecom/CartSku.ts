@@ -26,6 +26,6 @@ const cartSkuSchema = new Schema<CartSkuDoc>({
 );
 
 cartSkuSchema.virtual('details', { ref: 'CartSkuDetail', localField: '_id', foreignField: 'cart_sku_id', justOne: false });
-cartSkuSchema.virtual("discount", { ref: "CartSkuDiscount", localField: "_id", foreignField: "cart_sku_id", justOne: true });
+cartSkuSchema.virtual("cartSkuDiscount", { ref: "CartSkuDiscount", localField: "_id", foreignField: "cart_sku_id", justOne: true });
 
 export default mongoose.models.CartSku || mongoose.model<CartSkuDoc>("CartSku", cartSkuSchema);

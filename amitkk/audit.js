@@ -58,7 +58,6 @@ function shouldSkipTraversal(file) {
 function writeFile(fileName, data = []) {
   const uniqueData = [...new Set(data)].filter(Boolean).sort();
   fs.writeFileSync(path.join(AUDIT_DIR, fileName), uniqueData.join("\n"), "utf8");
-  console.log(`✔ Generated ${fileName}`);
 }
 
 function collectFiles(targetPath) {
@@ -382,11 +381,9 @@ ${
 `;
 
   fs.writeFileSync(path.join(AUDIT_DIR, "audit-report.md"), mdContent, "utf8");
-  console.log("✔ Generated audit-report.md");
 }
 
 async function run() {
-  console.log("\n🔍 STARTING PROJECT AUDIT\n");
   const targetFiles = [];
 
   CONFIG.targets.forEach((target) => {
@@ -394,7 +391,6 @@ async function run() {
   });
 
   const uniqueFiles = [...new Set(targetFiles.filter((file) => !isIgnored(file)))];
-  console.log(`✔ Found ${uniqueFiles.length} initial targets`);
 
   const graph = await buildGraph();
   const graphObj = graph.obj();
@@ -412,7 +408,6 @@ async function run() {
   }
 
   const allFiles = [...globalReachableFiles];
-  console.log(`✔ Total Reachable Files: ${allFiles.length}`);
 
   const diagnostics = getDiagnostics(allFiles);
   const eslintIssues = await runEslint(allFiles);

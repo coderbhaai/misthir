@@ -7,7 +7,7 @@ import { buildFilterQuery } from 'lib/server/plugins/buildFilterQuery';
 import Product from 'lib/models/product/Product';
 import ProductBrand from 'lib/models/product/ProductBrand';
 import Productmeta from 'lib/models/product/Productmeta';
-import SellerServiceArea from 'lib/models/ecom/SellerServiceArea';
+import SellerServiceArea from 'lib/models/seller/SellerServiceArea';
 import { logError } from 'lib/services/errorService';
 import { safeParse } from 'lib/services/dataService';
 

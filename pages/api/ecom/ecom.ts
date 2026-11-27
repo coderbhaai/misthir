@@ -17,6 +17,9 @@ import CartConsent from 'lib/models/ecom/CartConsent';
 import { processModuleFinancials } from 'lib/services/financialService';
 import { logError } from 'lib/services/errorService';
 import { cartCheck, create_cart, getPopulatedCartQuery, handleConsent, update_cart } from 'lib/services/ecomService';
+import OrderSellerCharges from 'lib/models/seller/OrderSellerCharges';
+import { CartSellerChargesDoc } from 'lib/models/seller/CartSellerCharges';
+import OrderSkuDiscount from 'lib/models/ecom/OrderSkuDiscount';
 
 export async function add_to_cart(req: any, res: any) {
   try {
@@ -199,16 +202,12 @@ export async function place_order(req: NextApiRequest, res: NextApiResponse) {
 };
 
 export async function createOrderFromCart(cart_id: string, res: NextApiResponse) {
-  try{
-    const cart = await Cart.findOne({ _id: cart_id }).populate([ 
-      { path: "cartCharges"}, 
-      { path: "cartConsent"}, 
-      { path: "cartCoupon", populate: { path: "coupon_id", model: "Coupon" } }, 
-      { path: "billing_address_id", populate: { path: "city_id", populate: { path: "state_id", }, }, }, 
-      { path: "cartSkus", populate: [{ path: "sku_id" }, { path: "product_id", populate: { path: "tax_id" } }] } 
-    ]);
-    if (!cart) { return { status: false, message: "Cart not found" }; }
-  
+  try {
+    const cart: any = await getPopulatedCartQuery(cart_id);
+    if (!cart) {
+      return { status: false, message: "Cart not found" };
+    }
+
     const newEntry = new Order({
       user_id: cart.user_id,
       billing_address_id: cart.billing_address_id,
@@ -220,12 +219,12 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
       user_remarks: cart.user_remarks,
       admin_remarks: cart.admin_remarks,
     });
-  
+
     const savedOrder = await newEntry.save();
     const order_id = savedOrder._id.toString();
     setCookie(res, "order_id", order_id);
-  
-    if(cart.cartCharges) {
+
+    if (cart.cartCharges) {
       await new OrderCharges({
         order_id: savedOrder._id,
         shipping_charges: cart.cartCharges.shipping_charges,
@@ -236,10 +235,26 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
         cod_charges: cart.cartCharges.cod_charges,
       }).save();
     }
-  
-    if (cart.cartCoupon && typeof cart.cartCoupon === 'object' && cart.cartCoupon.coupon_id) {
+
+    if (Array.isArray(cart.cartSellerCharges) && cart.cartSellerCharges.length > 0) {
+      await Promise.all(
+        cart.cartSellerCharges.map((charge: CartSellerChargesDoc) =>
+          new OrderSellerCharges({
+            order_id: savedOrder._id,
+            seller_id: charge.seller_id,
+            subtotal: charge.subtotal,
+            shipping_charges: charge.shipping_charges,
+            cod_charges: charge.cod_charges,
+            allow_cod: charge.allow_cod,
+            free_shipping_above: charge.free_shipping_above,
+          }).save()
+        )
+      );
+    }
+
+    if (cart.cartCoupon && typeof cart.cartCoupon === "object" && cart.cartCoupon.coupon_id) {
       const coupon = cart.cartCoupon.coupon_id as any;
-      
+
       await new OrderCoupon({
         order_id: savedOrder._id,
         coupon_id: cart.cartCoupon.coupon_id,
@@ -259,61 +274,80 @@ export async function createOrderFromCart(cart_id: string, res: NextApiResponse)
         buy_one: coupon.buy_one,
       }).save();
     }
-  
+
     let totalQuantity = 0;
     if (Array.isArray(cart.cartSkus)) {
-      totalQuantity = cart.cartSkus.reduce((sum: number, item: any) => sum + item.quantity, 0);
+      totalQuantity = cart.cartSkus.reduce( (sum: number, item: any) => sum + Number(item.quantity || 0), 0 );
     }
-  
+
     let perUnitAdminDiscount = 0;
     if (cart.cartCharges?.admin_discount && totalQuantity > 0) {
       perUnitAdminDiscount = cart.cartCharges.admin_discount / totalQuantity;
     }
 
     const financialItems: any[] = [];
-    const orderSkuDocs: any[] = [];
 
     if (Array.isArray(cart.cartSkus) && cart.cartSkus.length > 0) {
-      cart.cartSkus.forEach((item: any) => {
-        let effectivePrice = item.sale || 0;
-        effectivePrice -= perUnitAdminDiscount;
+      await Promise.all(
+        cart.cartSkus.map(async (item: any) => {
+          const disc = item.cartSkuDiscount || item.discount || null;
+          const sellerDiscountRate = Number( disc?.seller_discount ?? (typeof item.seller_discount === "number" ? item.seller_discount : 0) );
 
-        if (item.seller_discount) {
-          effectivePrice -= item.seller_discount;
-        }
+          let effectivePrice = Number(item.sale ?? item.price ?? 0);
+          effectivePrice -= perUnitAdminDiscount;
+          if (sellerDiscountRate > 0) {
+            effectivePrice -= sellerDiscountRate;
+          }
 
-        const quantity = item.quantity || 0;
-        orderSkuDocs.push({
-          order_id: savedOrder._id,
-          product_id: item.product_id?._id || item.product_id,
-          sku_id: item.sku_id?._id || item.sku_id,
-          seller_id: item.seller_id,
-          price: item.sku_id?.price || item.price,
-          quantity,
-          admin_discount: perUnitAdminDiscount * quantity,
-          seller_discount: item.seller_discount || 0,
-          flavor_id: item.flavor_id,
-        });
+          const quantity = Number(item.quantity || 0);
+          const productId = item.product_id?._id || item.product_id;
+          const skuId = item.sku_id?._id || item.sku_id;
+          const sellerId = item.seller_id?._id;
 
-        financialItems.push({
-          product_id: item.product_id,
-          sku_id: item.sku_id,
-          seller_id: item.seller_id,
-          quantity,
-          price: item.price,
-          effectivePrice,
-          admin_discount: perUnitAdminDiscount * quantity,
-          seller_discount: item.seller_discount || 0,
-        });
-      });
+          const createdOrderSku = await new OrderSku({
+            order_id: savedOrder._id,
+            product_id: productId,
+            sku_id: skuId,
+            seller_id: sellerId,
+            price: item.sku_id?.price || item.price,
+            quantity,
+            admin_discount: perUnitAdminDiscount * quantity,
+            seller_discount: sellerDiscountRate || 0,
+            flavor_id: item.flavor_id,
+          }).save();
 
-      await OrderSku.insertMany(orderSkuDocs);
+          if (disc || sellerDiscountRate > 0) {
+            await new OrderSkuDiscount({
+              order_id: savedOrder._id,
+              order_sku_id: createdOrderSku._id,
+              sku_id: skuId,
+              seller_id: sellerId,
+              discount_type: disc?.discount_type || "flat",
+              seller_discount: sellerDiscountRate,
+              seller_discount_validity: disc?.seller_discount_validity ?? null,
+              seller_discount_validity_value: disc?.seller_discount_validity_value ?? null,
+              seller_discount_unit: disc?.seller_discount_unit || "hours",
+            }).save();
+          }
+
+          financialItems.push({
+            product_id: item.product_id,
+            sku_id: item.sku_id,
+            seller_id: sellerId,
+            quantity,
+            price: item.price,
+            effectivePrice,
+            admin_discount: perUnitAdminDiscount * quantity,
+            seller_discount: sellerDiscountRate || 0,
+          });
+        })
+      );
     }
 
     const billingState = cart.billing_address_id?.city_id?.state_id?.name || "";
     await processModuleFinancials({ module: "Order", module_id: savedOrder._id, items: financialItems, billingState });
     await handleConsent(savedOrder._id, cart.cartConsent);
-    await initAction('Ecom', savedOrder._id as Types.ObjectId);
+    await initAction("Ecom", savedOrder._id as Types.ObjectId);
     return { status: true, message: "Order Placed", order_id };
   } catch (error) { return await logError(error, { function: "createOrderFromCart", payload: { cart_id } }); }
 }

@@ -1,7 +1,7 @@
 import Sku from "lib/models/product/Sku";
 import SkuDetail from "lib/models/product/SkuDetail";
 import mongoose, { Types } from "mongoose";
-import { getProp, isDateValid, pivotEntry } from "./dataService";
+import { getProp, isDateValid, pivotEntry, toIdString } from "./dataService";
 import { logError } from "./errorService";
 import SkuProductFeature from "lib/models/product/SkuProductFeature";
 import { NextApiRequest } from "next";
@@ -18,6 +18,8 @@ import CartSkuDetail from "lib/models/ecom/CartSkuDetail";
 import CartSkuDiscount from "lib/models/ecom/CartSkuDiscount";
 import { handleApplyCoupon, syncCartCouponSuggestions } from "./couponService";
 import { syncSellerCartCharges } from "./sellerService";
+import CartSellerCharges from "lib/models/seller/CartSellerCharges";
+import SellerSiteSetting from "lib/models/seller/SellerSiteSetting";
 
 export interface SellerResolveResult {
   sellerId: string | null;
@@ -400,8 +402,81 @@ export async function computeExpiry(validityValue: number, unit: string): Promis
   } catch (error) { await logError(error, { function: "computeExpiry", payload: { validityValue, unit } }); return null; }
 }
 
+function isCodSettingEnabled(moduleValue: unknown): boolean {
+  const normalized = String(moduleValue ?? "").trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
+export async function syncCartAllowCod(cart_id: string | Types.ObjectId) {
+  try{
+    if (!cart_id || !mongoose.Types.ObjectId.isValid(String(cart_id))) { return { allow_cod: false, paymode: "Online" }; }
+  
+    const cartObjectId = new mongoose.Types.ObjectId(String(cart_id));
+    const cart = await Cart.findById(cartObjectId);
+    if (!cart) { return { allow_cod: false, paymode: "Online" }; }
+  
+    const [cartSkus, sellerCharges] = await Promise.all([
+      CartSku.find({ cart_id: cartObjectId }).populate({ path: "product_id", select: "seller_id" }).lean(),
+      CartSellerCharges.find({ cart_id: cartObjectId }).lean(),
+    ]);
+  
+    const sellerIdsSet = new Set<string>();
+  
+    for (const sku of cartSkus as any[]) {
+      const sid = await toIdString(sku?.seller_id);
+      if (sid) sellerIdsSet.add(sid);
+    }
+  
+    for (const charge of sellerCharges as any[]) {
+      const sid = await toIdString(charge?.seller_id);
+      if (sid) sellerIdsSet.add(sid);
+    }
+  
+    const sellerIds = Array.from(sellerIdsSet);
+  
+    let allowCod = false;
+  
+    if (sellerIds.length > 0) {
+      const sellerObjectIds = sellerIds.filter((id) => mongoose.Types.ObjectId.isValid(id)).map((id) => new mongoose.Types.ObjectId(id));
+  
+      const settings = await SellerSiteSetting.find({
+        seller_id: { $in: sellerObjectIds },
+        module: "Allow Cod",
+        status: true,
+      }).lean();
+
+      console.log("settings" ,settings)
+  
+      const allowedSellerIds = new Set<string>();
+      for (const setting of settings as any[]) {
+        if (isCodSettingEnabled(setting?.module_value)) {
+          allowedSellerIds.add(await toIdString(setting?.seller_id));
+        }
+      }
+      allowCod = sellerIds.every((id) => allowedSellerIds.has(id));
+    }
+  
+    const updateFields: Record<string, unknown> = {
+      allow_cod: allowCod,
+    };
+  
+    if (!allowCod && cart.paymode === "COD") {
+      updateFields.paymode = "Online";
+    }
+  
+    const updatedCart = await Cart.findByIdAndUpdate(
+      cartObjectId,
+      { $set: updateFields },
+      { new: true }
+    );
+  
+    return { allow_cod: Boolean(updatedCart?.allow_cod), paymode: updatedCart?.paymode || "Online", cart: updatedCart };
+  } catch (error) { await logError(error, { function: "syncCartAllowCod", payload: { cart_id } }); return null; }
+}
+
 // CART CALUCLAUTIONS
   export async function cartCheck(cart_id: string) {
+    await syncCartAllowCod(cart_id);
     await syncCartDiscountsAndCharges(cart_id);
     await handleApplyCoupon(cart_id, undefined, { logUsage: false });
     await syncCartCouponSuggestions(cart_id);
@@ -574,16 +649,18 @@ export async function computeExpiry(validityValue: number, unit: string): Promis
 
   export async function getPopulatedCartQuery(cart_id: string | any) {
     return Cart.findById(cart_id).populate([
-      { path: "cartCoupon" },
+      { path: "cartCoupon", populate: { path: "coupon_id", model: "Coupon" } },
       { path: "cartCharges" },
       { path: 'cartConsent' },
       { path: 'cartSellerCharges' },
       { path: "couponSuggestions" },
-      { path: 'billing_address_id' }, { path: 'shipping_address_id' }, 
+      { path: "billing_address_id", populate: { path: "city_id", populate: { path: "state_id", }, }, }, 
+      { path: 'shipping_address_id' }, 
       { path: "cartSkus", populate: [
         { path: "sku_id"},
-        { path: "discount" },
+        { path: "cartSkuDiscount" },
         { path: "product_id", populate: [
+                          { path: "tax_id" },
                           { path: "seller_id" },
                           { path: "brands", populate: { path: "productBrand_id" } },
                           { path: 'mediaHubs', populate: { path: 'media_id' } }
@@ -591,7 +668,7 @@ export async function computeExpiry(validityValue: number, unit: string): Promis
       ]},
     ]);
   }
-
+  
   export async function deleteCartSkuDiscount(discountId: unknown) {
     if (!discountId) return null;
     return await CartSkuDiscount.findByIdAndDelete(discountId);

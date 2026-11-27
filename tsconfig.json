@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
+    "skipLibCheck": true,
+    "incremental": true,
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -12,14 +13,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "incremental": true,
-    "baseUrl": ".", 
-    "typeRoots": ["./node_modules/@types", "./emotion-server.d.ts"],
     "types": ["node"],
     "paths": {
-      "@amitkk/*": ["amitkk/*"]
+      "@amitkk/*": ["./amitkk/*"],
+      "lib/*": ["./lib/*"],
+      "pages/*": ["./pages/*"],
+      "hooks/*": ["./hooks/*"],
+      "contexts/*": ["./contexts/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", "amitkk/generateComponentMap.js", "amitkk/basic/components/ProductSlider.jsx", "amitkk/basic/components/CustomSlider.tsx", "lib/models/sales/SaleUpsell.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", "amitkk/generateComponentMap.js", "amitkk/basic/admin/ProductSlider.jsx", "amitkk/basic/admin/CustomSlider.tsx", "lib/server/test-db.ts"],
   "exclude": ["node_modules"]
 }

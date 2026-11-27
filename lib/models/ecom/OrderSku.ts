@@ -27,4 +27,5 @@ const orderSkuSchema = new Schema<OrderSkuDoc>({
   }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
+orderSkuSchema.virtual("orderSkuDiscount", { ref: "OrderSkuDiscount", localField: "_id", foreignField: "order_sku_id", justOne: true });
 export default mongoose.models.OrderSku || mongoose.model<OrderSkuDoc>("OrderSku", orderSkuSchema);

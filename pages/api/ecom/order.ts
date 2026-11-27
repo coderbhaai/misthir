@@ -60,7 +60,24 @@ export async function get_single_order(req: NextApiRequest, res: NextApiResponse
     if ( !order_id ) { return res.status(400).json({ message: 'Invalid or missing Id' }); }
     const objectId = new mongoose.Types.ObjectId(order_id);
 
-    const data = await Order.findById(objectId).populate([ { path: 'orderCharges' }, { path: 'billing_address_id' }, { path: 'shipping_address_id' }, { path: 'orderSkus', populate: [ { path: 'sku_id' }, { path: 'product_id', populate: [ { path: 'mediaHubs', populate: { path: 'media_id' } } ] } ]  }]).exec();
+    const data = await Order.findById(objectId).populate([ 
+      { path: 'orderCharges' }, 
+      { path: 'orderCoupon' }, 
+      { path: 'orderSellerCharges' }, 
+      { path: 'billing_address_id' }, 
+      { path: 'shipping_address_id' }, 
+      { path: "orderSkus",
+        populate: [
+          { path: "sku_id" },
+          { path: "seller_id", select: "name" },
+          { path: "orderSkuDiscount" },
+          { path: "product_id",
+            populate: [
+              { path: "seller_id", select: "name" },
+              { path: "mediaHubs", populate: { path: "media_id" } },
+            ]},
+        ]},
+    ]).exec();
     const relatedContent = await getGenericContent();
 
     return res.status(200).json({ message: 'Single Order Fetched', data, relatedContent });

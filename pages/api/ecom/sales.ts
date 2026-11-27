@@ -198,7 +198,6 @@ export async function applySalesAndGetUpsells(cart_id: string) {
     }).populate('sku_id').exec();
 
     if (!cartSkus || cartSkus.length === 0) {
-      console.log("[Sales Debug] Cart is empty or not found for cart_id:", cart_id);
       return { totalCartSubtotal: 0, totalCartSavings: 0, upsellMessage: null };
     }
 
@@ -209,17 +208,11 @@ export async function applySalesAndGetUpsells(cart_id: string) {
       valid_to: { $gte: now }
     }).lean() as unknown as Array<SaleDoc & { _id: Types.ObjectId; discount: number; discount_type: string; name: string }>;
 
-    console.log(`[Sales Debug] Found ${activeSales.length} active sales.`);
-
     const saleIds = activeSales.map(s => s._id);
-
-    // 2. Fetch targets and upsells concurrently
     const [allTargets, allUpsells] = await Promise.all([
       SaleTarget.find({ sale_id: { $in: saleIds } }).lean(),
       SaleUpsell.find({ sale_id: { $in: saleIds } }).lean()
     ]);
-
-    console.log(`[Sales Debug] Fetched ${allTargets.length} total targets and ${allUpsells.length} total upsells.`);
 
     const targetsBySale = new Map<string, any[]>();
     for (const t of allTargets) {
@@ -235,11 +228,7 @@ export async function applySalesAndGetUpsells(cart_id: string) {
     for (const item of cartSkus) {
       const product = item.product_id as any;
       const sku = item.sku_id as any;
-      
-      if (!sku) {
-        console.log(`[Sales Debug] Warning: CartSku item missing sku_id reference.`);
-        continue;
-      }
+      if (!sku) { continue; }
 
       const originalPrice = sku.price || 0;
       const quantity = item.quantity || 1;
@@ -264,8 +253,6 @@ export async function applySalesAndGetUpsells(cart_id: string) {
         { module: 'ProductType', ids: [productTypeId] }
       ];
 
-      console.log(`[Sales Debug] Evaluating Item -> SKU ID: ${skuId}, Product ID: ${productId}, Original Price: ${originalPrice}`);
-
       for (const level of levels) {
         if (!level.ids || level.ids.length === 0) continue;
 
@@ -278,9 +265,6 @@ export async function applySalesAndGetUpsells(cart_id: string) {
           );
 
           if (matchedTarget) {
-            console.log(`[Sales Match Found!] Sale Name: "${sale.name}" matched via Module: ${level.module} (Target ID: ${matchedTarget.module_id})`);
-            console.log(`[Discount Details] Type: ${sale.discount_type}, Value: ${sale.discount}`);
-
             const dtype = String(sale.discount_type).trim().toLowerCase();
 
             if (dtype === 'percent based' || dtype === 'percentage') {
@@ -299,16 +283,11 @@ export async function applySalesAndGetUpsells(cart_id: string) {
       const finalSalePrice = Number(bestDiscountedPrice.toFixed(2));
       const itemSavings = (originalPrice - finalSalePrice) * quantity;
       totalCartSavings += itemSavings;
-
-      console.log(`[Price Update] SKU ${skuId} | Original: ${originalPrice} | Sale Price: ${finalSalePrice}`);
-
-      // Assign values and persist using Mongoose model instance
       item.price = originalPrice;
       item.sale = finalSalePrice;
       await item.save();
     }
-
-    // 3. Evaluate Upsell Suggestions
+    
     let bestUpsellMessage: string | null = null;
     let smallestGap = Infinity;
 

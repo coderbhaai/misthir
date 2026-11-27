@@ -17,6 +17,7 @@ export interface CartProps{
   payable_amount?: number;
   user_remarks?: string;
   admin_remarks?: string;
+  allow_cod?: string;
   createdAt: Date;
   updatedAt: Date;
 
@@ -120,16 +121,10 @@ export interface OrderSkuProps{
   sku_id: string | SkuProps;
   seller_id: string | UserRowProps;
   quantity: number;
-  flavor_id?: string;
+  price: number;
+  admin_discount?: number;
   seller_discount?: number;
-  seller_discount_validity?: Date;
-  seller_discount_unit?: string;
-  seller_discount_validity_value?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  product: { name: string; price?: number };
-  seller: { name: string };
-  sku: { price: number };
+  flavor_id?: string;
 }
 
 export interface OrderChargesProps{

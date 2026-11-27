@@ -284,3 +284,41 @@ export async function isDateValid(validity: unknown, now: Date): Promise<boolean
   if (Number.isNaN(expiry.getTime())) return true;
   return expiry.getTime() >= now.getTime();
 }
+
+export function toIdString(val: unknown): string {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+
+  if (typeof val === "object") {
+    const anyVal = val as {
+      _id?: unknown;
+      id?: unknown;
+      toHexString?: () => string;
+      toString?: () => string;
+    };
+
+    if (typeof anyVal.toHexString === "function") {
+      return anyVal.toHexString();
+    }
+
+    // Only unwrap `_id` if it is a populated/parent object and `_id !== val`
+    if (anyVal._id !== undefined && anyVal._id !== null && anyVal._id !== val) {
+      return toIdString(anyVal._id);
+    }
+
+    if (anyVal.id !== undefined && anyVal.id !== null && anyVal.id !== val) {
+      return toIdString(anyVal.id);
+    }
+
+    if (
+      typeof anyVal.toString === "function" &&
+      anyVal.toString !== Object.prototype.toString
+    ) {
+      const str = String(anyVal.toString());
+      if (str && str !== "[object Object]") return str;
+    }
+  }
+
+  return "";
+}

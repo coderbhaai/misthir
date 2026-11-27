@@ -69,17 +69,22 @@ import City from "./address/City";
 import Country from "./address/Country";
 import State from "./address/State";
 
+import BulkOrder from "./ecom/BulkOrder";
+import BuyOneGetOne from "./ecom/BuyOneGetOne";
 import Cart from "./ecom/Cart";
-import CartCharges from "./ecom/CartCharges";
+import CartConsent from "./ecom/CartConsent";
 import CartSku from "./ecom/CartSku";
+import CartCharges from "./ecom/CartCharges";
 import CartSkuDetail from "./ecom/CartSkuDetail";
+import CartSkuDiscount from "./ecom/CartSkuDiscount";
 import Order from "./ecom/Order";
 import OrderCharges from "./ecom/OrderCharges";
-import OrderSku from "./ecom/OrderSku";
 import OrderConsent from "./ecom/OrderConsent";
 import OrderOrderConsent from "./ecom/OrderOrderConsent";
-import CartConsent from "./ecom/CartConsent";
-import SellerServiceArea from "./ecom/SellerServiceArea";
+import OrderSku from "./ecom/OrderSku";
+import OrderSkuDetail from "./ecom/OrderSkuDetail";
+import OrderSkuDiscount from "./ecom/OrderSkuDiscount";
+import SellerServiceArea from "./seller/SellerServiceArea";
 
 import SiteSetting from "./payment/SiteSetting";
 import RazorpayPayment from "./payment/RazorpayPayment";
@@ -105,10 +110,13 @@ import OrderGuideProducts from "./wishlist/OrderGuideProducts";
 
 import { auditLoggerPlugin } from "lib/server/plugins/auditLogger";
 
-import SellerIncome from "./seller/SellerIncome";
-import SellerPayoutRequest from "./seller/SellerPayoutRequest";
-import SellerIncomeSellerPayoutRequest from "./seller/SellerIncomeSellerPayoutRequest";
+import CartSellerCharges from "./seller/CartSellerCharges";
+import OrderSellerCharges from "./seller/OrderSellerCharges";
 import Payment from "./seller/Payment";
+import SellerIncome from "./seller/SellerIncome";
+import SellerIncomeSellerPayoutRequest from "./seller/SellerIncomeSellerPayoutRequest";
+import SellerPayoutRequest from "./seller/SellerPayoutRequest";
+import SellerSiteSetting from "./seller/SellerSiteSetting";
 
 const rawModels: Record<string, any> = {
  // Refrences
@@ -131,7 +139,7 @@ const rawModels: Record<string, any> = {
   Address, City, Country, State,
 
   // Ecom
-  Cart, CartSku, CartCharges, CartSkuDetail, Order, OrderSku, OrderCharges, CartConsent, OrderConsent, OrderOrderConsent, SellerServiceArea, 
+  BulkOrder, BuyOneGetOne, Cart, CartConsent, CartSku, CartCharges, CartSkuDetail, CartSkuDiscount, Order, OrderCharges, OrderConsent, OrderOrderConsent, OrderSku, OrderSkuDetail, OrderSkuDiscount, SellerServiceArea,
 
   // Product
   BankDetail, Commission, Documentation, Ingridient, Product, ProductBrand, ProductFeature, ProductIngridient, Productmeta, ProductSpecification, ProductProductBrand, ProductProductFeature, ProductProductmeta, ProductProductSpecification, Sku, SkuDetail, SkuProductFeature, Seller, ProductFilter, 
@@ -155,7 +163,7 @@ const rawModels: Record<string, any> = {
   WishlistCart, Wishlist, OrderGuideProducts, OrderGuide, 
 
   // Seller
-  SellerIncome, SellerPayoutRequest, SellerIncomeSellerPayoutRequest, Payment, 
+  CartSellerCharges, OrderSellerCharges, Payment, SellerIncome, SellerIncomeSellerPayoutRequest, SellerPayoutRequest, SellerSiteSetting, 
 };
 
 export type AnyModel = mongoose.Model<any, any, any, any, any, any>;
